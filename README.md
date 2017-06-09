@@ -8,7 +8,6 @@ This script performs unsupervised analyses (Principal Component Analysis and clu
 ## Prerequisites
 This R script requires the following packages:
 - ConsensusClusterPlus
-- xlsx
 - ade4
 - AnnotationDbi
 - org.Hs.eg.db
