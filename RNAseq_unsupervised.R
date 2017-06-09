@@ -19,8 +19,7 @@ opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
 
 # load libraries
-require(ConsensusClusterPlus)
-require(xlsx)
+library(ConsensusClusterPlus)
 library(ade4)
 library(AnnotationDbi)
 library(org.Hs.eg.db)
