@@ -1,5 +1,5 @@
 # RNAseq_analysis_scripts
-Scripts for RNA seq analysis
+Scripts for RNA seq analysis. They can be used directly using the outputs from [*IARCbioinfo's RNA seq workflow*].(https://github.com/IARCbioinfo/RNAseq-nf)
 
 ## Unsupervised analysis: *RNAseq_unsupervised.R*
 
