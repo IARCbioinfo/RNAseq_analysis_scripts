@@ -1,13 +1,20 @@
 # RNAseq_analysis_scripts
 Scripts for RNA seq analysis
 
-## Unsupervised analysis: *cluster.R*
+## Unsupervised analysis: *RNAseq_unsupervised.R*
 
 This script performs unsupervised analyses (Principal Component Analysis and clustering) from htseq-count outputs. 
 
 ## Prerequisites
 This R script requires the following packages:
-- 
+- ConsensusClusterPlus
+- xlsx
+- ade4
+- AnnotationDbi
+- org.Hs.eg.db
+- DESeq2
+- biomaRt
+- fpc
 
 
 ### Usage
