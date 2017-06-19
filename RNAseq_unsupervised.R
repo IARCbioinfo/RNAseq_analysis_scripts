@@ -186,4 +186,4 @@ s.class(pca$li,as.factor(clusters[[6]]$consensusClass),col=prettycolors,xax = 1,
 dev.off()
 
 # save results
-save(di,pca,clusters,icl, file = "RNAseq_unsupervised.RData")
+save(di,pca,clusters,icl, file = paste("RNAseq_unsupervised_",opt$clusteralg,"_",opt$linkage,".RData",sep="") )
