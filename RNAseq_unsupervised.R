@@ -140,7 +140,7 @@ ldunn = sapply(1:5, function(i) stcl[[i]]$dunn )
 lwbr  = sapply(1:5, function(i) stcl[[i]]$wb.ratio ) #c(stcl.B$wb.ratio,stcl.hc$wb.ratio,stcl.Whc$wb.ratio,stcl.W2hc$wb.ratio,stcl.km$wb.ratio)
 lch   = sapply(1:5, function(i) stcl[[i]]$ch ) #c(stcl.B$ch,stcl.hc$ch,stcl.Whc$ch,stcl.W2hc$ch,stcl.km$ch)
 lsil = vector("list",5)
-pdf("clustering/Silhouette.pdf",h=4,w=4*5)
+pdf(paste("clustering/Silhouette_",opt$clusteralg,"_",opt$linkage,".pdf",sep=""),h=4,w=4*5)
 par(mfrow=c(1,5))
 for(i in 2:6){
   sil = silhouette(clusters[[i]]$consensusClass,dist(t(d),method = "euclidean"))
@@ -156,7 +156,7 @@ md = dist( t(d),method = "euclidean")
 corl =sapply(cdl, cor,md)
 
 # plot clustering stats
-pdf("clustering/Cluster_separation_stats.pdf",h=3.5,w=3.5*5)
+pdf(paste("clustering/Cluster_separation_stats_",opt$clusteralg,"_",opt$linkage,".pdf",sep=""),h=3.5,w=3.5*5)
 par(mfrow=c(1,5),family="Times")
 co = rep(1,5)
 co[which.max(ldunn)]=2
@@ -176,7 +176,7 @@ barplot(corl,names.arg = paste("K =",2:6) ,las=2,ylab="Mean cophenetic distance"
 dev.off()
 
 # plot PCA with clusters
-pdf("PCA/PCA.pdf",h=3,w=3*5)
+pdf(paste("PCA/PCA_",opt$clusteralg,"_",opt$linkage,".pdf",sep=""),h=3,w=3*5)
 par(mfrow=c(1,5),family="Times")
 s.class(pca$li,as.factor(clusters[[2]]$consensusClass),col=prettycolors,xax = 1,yax=2,addaxes = T,sub= paste("ConsensusClusterPlus", paste(paste("PC",1:2,": ",format(pca$eig[1:2]/sum(pca$eig)*100,digits=2),"%",sep=""),collapse = ", ")) )
 s.class(pca$li,as.factor(clusters[[3]]$consensusClass),col=prettycolors,xax = 1,yax=2,addaxes = T,sub= paste("ConsensusClusterPlus", paste(paste("PC",1:2,": ",format(pca$eig[1:2]/sum(pca$eig)*100,digits=2),"%",sep=""),collapse = ", ")) )
