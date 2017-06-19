@@ -26,6 +26,7 @@ library(org.Hs.eg.db)
 library(DESeq2)
 library(biomaRt)
 library(fpc)
+library(cluster)
 
 # define some nice colors
 prettycolors = c(1,2,rgb(0,152/255,219/255),rgb(233/255,131/255,0),rgb(0,155/255,118/255),rgb(0.5,0.5,0.5))
@@ -138,13 +139,27 @@ stcl   = lapply(2:6, function(i) cluster.stats(dist(t(d)),clusters[[i]]$consensu
 ldunn = sapply(1:5, function(i) stcl[[i]]$dunn )
 lwbr  = sapply(1:5, function(i) stcl[[i]]$wb.ratio ) #c(stcl.B$wb.ratio,stcl.hc$wb.ratio,stcl.Whc$wb.ratio,stcl.W2hc$wb.ratio,stcl.km$wb.ratio)
 lch   = sapply(1:5, function(i) stcl[[i]]$ch ) #c(stcl.B$ch,stcl.hc$ch,stcl.Whc$ch,stcl.W2hc$ch,stcl.km$ch)
+lsil = vector("list",5)
+pdf("clustering/Silhouette.pdf",h=4,w=4*5)
+par(mfrow=c(1,5))
+for(i in 2:6){
+  sil = silhouette(clusters[[i]]$consensusClass,dist(t(d),method = "euclidean"))
+  sizes = table(clusters[[i]]$consensusClass)
+  plot( sil ,col=rep( clusters[[i]]$clrs[[3]],rep=sizes) ,main=paste("K=",i))
+  lsil[[i-1]]=sil
+}
+dev.off()
+
+msil = sapply(1:5, function(i) mean( lsil[[i]][,3] ) )
+cdl = lapply(2:6, function(i) as.dist(1-clusters[[i]]$consensusMatrix ) )
+md = dist( t(d),method = "euclidean")
+corl =sapply(cdl, cor,md)
 
 # plot clustering stats
-pdf("clustering/Cluster_separation_stats.pdf",h=3.5,w=3.5*3)
-par(mfrow=c(1,3),family="Times")
+pdf("clustering/Cluster_separation_stats.pdf",h=3.5,w=3.5*5)
+par(mfrow=c(1,5),family="Times")
 co = rep(1,5)
 co[which.max(ldunn)]=2
-par(mfrow=c(1,3),family="Times")
 barplot(ldunn ,names.arg = paste("K =",2:6) ,las=2,ylab="Dunn index",col= co)
 co = rep(1,5)
 co[which.min(lwbr)]=2
@@ -152,6 +167,12 @@ barplot(lwbr ,names.arg = paste("K =",2:6) ,las=2,ylab="Within-between SS ratio"
 co = rep(1,5)
 co[which.max(lch)]=2
 barplot(lch ,names.arg = paste("K =",2:6) ,las=2,ylab="Calinski-Harabasz index",col= co)
+co = rep(1,5)
+co[which.max(msil)]=2
+barplot(msil,names.arg = paste("K =",2:6) ,las=2,ylab="Mean Silhouette",col= co)
+co = rep(1,5)
+co[which.max(corl)]=2
+barplot(corl,names.arg = paste("K =",2:6) ,las=2,ylab="Mean cophenetic distance",col= co)
 dev.off()
 
 # plot PCA with clusters
