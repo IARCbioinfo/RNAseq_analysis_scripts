@@ -24,15 +24,36 @@ opt = parse_args(opt_parser);
 # load libraries
 library(ConsensusClusterPlus)
 library(ade4)
-library(AnnotationDbi)
-library(org.Hs.eg.db)
 library(DESeq2)
-library(biomaRt)
+#library(AnnotationDbi)
+#library(org.Hs.eg.db)
+#library(biomaRt)
 library(fpc)
 library(cluster)
 
 # define some nice colors
 prettycolors = c(1,2,rgb(0,152/255,219/255),rgb(233/255,131/255,0),rgb(0,155/255,118/255),rgb(0.5,0.5,0.5))
+
+### custom htseqcount read for compatibility with htseq 0.8 
+DESeqDataSetFromHTSeqCount2 <- function( sampleTable, directory=".", design, ignoreRank=FALSE, ...) 
+{
+  if (missing(design)) stop("design is missing")
+  l <- lapply( as.character( sampleTable[,2] ), function(fn) read.table( file.path( directory, fn ), fill=T ) )
+  if( ! all( sapply( l, function(a) all( a$V1 == l[[1]]$V1 ) ) ) )
+      stop( "Gene IDs (first column) differ between files." )
+  oldSpecialNames <- c("no_feature","ambiguous","too_low_aQual","not_aligned","alignment_not_unique")
+  # either starts with two underscores
+  # or is one of the old special names (htseq-count backward compatability)
+  specialRows <- (substr(l[[1]]$V1,1,1) == "_") | l[[1]]$V1 %in% oldSpecialNames
+  tbl <- sapply( l, function(a) a[,ncol(a)] ) # changed
+  colnames(tbl) <- sampleTable[,1]
+  rownames(tbl) <- l[[1]][,ncol(l[[1]])-1] # changed
+  rownames(sampleTable) <- sampleTable[,1]
+  tbl <- tbl[ !specialRows, , drop=FALSE ]
+  object <- DESeqDataSetFromMatrix(countData=tbl,colData=sampleTable[,-(1:2),drop=FALSE],design=design,ignoreRank, ...)
+  return(object)
+}   
+
 
 ## build count table from count files
 directory <- opt$folder
@@ -42,7 +63,7 @@ outdir    <- opt$out
 dir.create(outdir, showWarnings = FALSE)
 sampleFiles  <- grep(opt$pattern,list.files(directory),value=TRUE) # find names
 sampleTable <- data.frame(sampleName = paste( "sample", 1:length(sampleFiles),sep = "") ,fileName = sampleFiles) # table for DESeq
-ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable,directory = directory, design= ~ 1)
+ddsHTSeq <- DESeqDataSetFromHTSeqCount2(sampleTable = sampleTable,directory = directory, design= ~ 1)
 ddsHTSeq <- ddsHTSeq[ rowSums(counts(ddsHTSeq)) > 1, ] # filter out rows with no counts
 setwd(outdir)
 dir.create("PCA", showWarnings = FALSE)
@@ -104,7 +125,7 @@ pca <- dudi.pca(t(assay(di)),scannf = F,nf = 10,center = T, scale = F)
 # genes that contribute the most to variance in 1st PC
 c1 = (pca$c1[,1])**2
 idgc1   = sort.int(c1[c1>1/length(c1)],decreasing = T,index.return = T)
-genes = data.frame(ensembl_gene_id=rownames(pca$c1[c1>1/length(c1),])[idgc1$ix],stringsAsFactors = F)
+genes = data.frame(gene_name=rownames(pca$c1[c1>1/length(c1),])[idgc1$ix],stringsAsFactors = F)
 genes$gene_loading_PC1 = pca$c1[,1][c1>1/length(c1)][idgc1$ix]
 genes$gene_loading_PC2 = pca$c1[,2][c1>1/length(c1)][idgc1$ix]
 
@@ -120,8 +141,8 @@ text(length( idgc1$ix )+8000,0.05,"loading > 1/n",col=rgb(1,0,0,0.5),offset=1)
 dev.off()
 
 # get gene names
-shortnames = sapply(genes$ensembl_gene_id, function(x) strsplit(x,split = "\\.")[[1]][1] )
-genes$ensembl_symbol <- mapIds(org.Hs.eg.db, keys=shortnames,column="SYMBOL", keytype="ENSEMBL", multiVals="first")
+#shortnames = sapply(genes$ensembl_gene_id, function(x) strsplit(x,split = "\\.")[[1]][1] )
+#genes$gene_name <-  #mapIds(org.Hs.eg.db, keys=shortnames,column="SYMBOL", keytype="ENSEMBL", multiVals="first")
 
 # save top gene loadings
 write.csv(genes,file="PCA/Genes_PC1.csv")
