@@ -123,7 +123,7 @@ c1 = (pca$c1[,1])**2
 idgc1   = sort.int(c1[c1>1/length(c1)],decreasing = T,index.return = T)
 genes = data.frame(gene_name=rownames(pca$c1)[c1>1/length(c1)][idgc1$ix],stringsAsFactors = F)
 genes$gene_loading_PC1 = pca$c1[,1][c1>1/length(c1)][idgc1$ix]
-genes$gene_loading_PC2 = pca$c1[,2][c1>1/length(c1)][idgc1$ix]
+if(ncol(pca$c1)>1) genes$gene_loading_PC2 = pca$c1[,2][c1>1/length(c1)][idgc1$ix]
 
 # plot PCA loadings
 pdf("PCA/PCA_loadings.pdf",h=4.5,w=4.5)
