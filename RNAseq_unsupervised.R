@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 ####################################################
 ### Script to perform Clustering of RNA seq data ###
 ####################################################
@@ -10,6 +12,7 @@ option_list = list(
   make_option(c("-o", "--out"), type="character", default="out", help="output directory name [default= %default]", metavar="character"),
   make_option(c("-p", "--pattern"), type="character", default="count.txt", help="pattern for count file names [default= %default]", metavar="character"),
   make_option(c("-n", "--nbgenes"), type="numeric", default=500, help="number of genes to use for clustering [default= %default]", metavar="number"),
+  make_option(c("-s", "--nsub"), type="numeric", default=1000, help="the number of genes to subsample for vst [default= %default]", metavar="number"),
   make_option(c("-t", "--transform"), type="character", default="auto", help="count transformation method; 'rld', 'vst', or 'auto' [default= %default]", metavar="character"),
   make_option(c("-c", "--clusteralg"), type="character", default="hc", help="clustering algorithm to be passed to ConsensusClusterPlus; 'km' (k-means on data matrix), 'kmdist' (k-means on distances), 'hc' (hierarchical clustering), 'pam' (paritioning around medoids) [default= %default]", metavar="character"),
   make_option(c("-l", "--linkage"), type="character", default="complete", help="method for hierarchical clustering to be passed to ConsensusClusterPlus; 'ward.D', 'ward.D2', 'single', 'complete', 'average', 'mcquitty', 'median', or 'centroid' [default= %default]", metavar="character")
@@ -51,11 +54,11 @@ if(opt$transform=="rld"){
   tran = "r-log"
 }else{
   if(opt$transform=="vst"){
-    di  <- vst(ddsHTSeq, blind = TRUE)  #vst transformation
+    di  <- vst(ddsHTSeq, blind = TRUE, nsub = opt$nsub)  #vst transformation
     tran = "vst"
   }else{
     rld <- rlog(ddsHTSeq, blind = TRUE) # rlog transformation
-    vsd <- vst(ddsHTSeq, blind = TRUE)  #vst transformation
+    vsd <- vst(ddsHTSeq, blind = TRUE, nsub = opt$nsub)  #vst transformation
     
   ddsHTSeq <- estimateSizeFactors(ddsHTSeq)
   df <- bind_rows( as_data_frame(log2(counts(ddsHTSeq, normalized=TRUE)[, 1:2]+1)) %>% mutate(transformation = "log2(x + 1)"),
