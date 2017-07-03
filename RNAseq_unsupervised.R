@@ -25,9 +25,6 @@ opt = parse_args(opt_parser);
 library(ConsensusClusterPlus)
 library(ade4)
 library(DESeq2)
-#library(AnnotationDbi)
-#library(org.Hs.eg.db)
-#library(biomaRt)
 library(fpc)
 library(cluster)
 
@@ -53,7 +50,6 @@ DESeqDataSetFromHTSeqCount2 <- function( sampleTable, directory=".", design, ign
   object <- DESeqDataSetFromMatrix(countData=tbl,colData=sampleTable[,-(1:2),drop=FALSE],design=design,ignoreRank, ...)
   return(object)
 }   
-
 
 ## build count table from count files
 directory <- opt$folder
@@ -125,7 +121,7 @@ pca <- dudi.pca(t(assay(di)),scannf = F,nf = 10,center = T, scale = F)
 # genes that contribute the most to variance in 1st PC
 c1 = (pca$c1[,1])**2
 idgc1   = sort.int(c1[c1>1/length(c1)],decreasing = T,index.return = T)
-genes = data.frame(gene_name=rownames(pca$c1[c1>1/length(c1),])[idgc1$ix],stringsAsFactors = F)
+genes = data.frame(gene_name=rownames(pca$c1)[c1>1/length(c1)][idgc1$ix],stringsAsFactors = F)
 genes$gene_loading_PC1 = pca$c1[,1][c1>1/length(c1)][idgc1$ix]
 genes$gene_loading_PC2 = pca$c1[,2][c1>1/length(c1)][idgc1$ix]
 
