@@ -29,7 +29,7 @@ library(fpc)
 library(cluster)
 
 # define some nice colors
-prettycolors = c(1,2,rgb(0,152/255,219/255),rgb(233/255,131/255,0),rgb(0,155/255,118/255),rgb(0.5,0.5,0.5))
+prettycolors = c(1,2,rgb(0,152/255,219/255),rgb(233/255,131/255,0),rgb(0,155/255,118/255),rgb(0.5,0.5,0.5),rgb(0,124,146),rgb(178,111,22),rgb(234,171,0),rgb(83,40,79))
 
 ### custom htseqcount read for compatibility with htseq 0.8 
 DESeqDataSetFromHTSeqCount2 <- function( sampleTable, directory=".", design, ignoreRank=FALSE, ...) 
@@ -151,18 +151,19 @@ d=d[rev(order(mads))[1:n],]
 d = sweep(d,1, apply(d,1,median,na.rm=T))
 
 # compute clusters and consensus
-clusters = ConsensusClusterPlus(d,maxK = 6,title=paste("clustering/ConsensusClusterPlus",opt$clusteralg,opt$linkage,sep="_"),innerLinkage=opt$linkage,clusterAlg=opt$clusteralg,distance="euclidean" ,seed=1,plot="png")
+maxK = min(10,ncol(d)-2)
+clusters = ConsensusClusterPlus(d,maxK = maxK,title=paste("clustering/ConsensusClusterPlus",opt$clusteralg,opt$linkage,sep="_"),innerLinkage=opt$linkage,clusterAlg=opt$clusteralg,distance="euclidean" ,seed=1,plot="png")
 icl     = calcICL(clusters,title=paste("clustering/ConsensusClusterPlus",opt$clusteralg,opt$linkage,sep="_"),plot="png")
 
 # compute clustering stats
-stcl   = lapply(2:6, function(i) cluster.stats(dist(t(d)),clusters[[i]]$consensusClass) )
-ldunn = sapply(1:5, function(i) stcl[[i]]$dunn )
-lwbr  = sapply(1:5, function(i) stcl[[i]]$wb.ratio ) #c(stcl.B$wb.ratio,stcl.hc$wb.ratio,stcl.Whc$wb.ratio,stcl.W2hc$wb.ratio,stcl.km$wb.ratio)
-lch   = sapply(1:5, function(i) stcl[[i]]$ch ) #c(stcl.B$ch,stcl.hc$ch,stcl.Whc$ch,stcl.W2hc$ch,stcl.km$ch)
-lsil = vector("list",5)
-pdf(paste("clustering/Silhouette_",opt$clusteralg,"_",opt$linkage,".pdf",sep=""),h=4,w=4*5)
-par(mfrow=c(1,5))
-for(i in 2:6){
+stcl   = lapply(2:maxK, function(i) cluster.stats(dist(t(d)),clusters[[i]]$consensusClass) )
+ldunn = sapply(1:(maxK-1), function(i) stcl[[i]]$dunn )
+lwbr  = sapply(1:(maxK-1), function(i) stcl[[i]]$wb.ratio ) #c(stcl.B$wb.ratio,stcl.hc$wb.ratio,stcl.Whc$wb.ratio,stcl.W2hc$wb.ratio,stcl.km$wb.ratio)
+lch   = sapply(1:(maxK-1), function(i) stcl[[i]]$ch ) #c(stcl.B$ch,stcl.hc$ch,stcl.Whc$ch,stcl.W2hc$ch,stcl.km$ch)
+lsil = vector("list",(maxK-1))
+pdf(paste("clustering/Silhouette_",opt$clusteralg,"_",opt$linkage,".pdf",sep=""),h=4,w=4*(maxK-1))
+par(mfrow=c(1,(maxK-1)))
+for(i in 2:maxK){
   sil = silhouette(clusters[[i]]$consensusClass,dist(t(d),method = "euclidean"))
   sizes = table(clusters[[i]]$consensusClass)
   plot( sil ,col=rep( clusters[[i]]$clrs[[3]],rep=sizes) ,main=paste("K=",i))
@@ -170,39 +171,35 @@ for(i in 2:6){
 }
 dev.off()
 
-msil = sapply(1:5, function(i) mean( lsil[[i]][,3] ) )
-cdl = lapply(2:6, function(i) as.dist(1-clusters[[i]]$consensusMatrix ) )
+msil = sapply(1:(maxK-1), function(i) mean( lsil[[i]][,3] ) )
+cdl = lapply(2:maxK, function(i) as.dist(1-clusters[[i]]$consensusMatrix ) )
 md = dist( t(d),method = "euclidean")
 corl =sapply(cdl, cor,md)
 
 # plot clustering stats
-pdf(paste("clustering/Cluster_separation_stats_",opt$clusteralg,"_",opt$linkage,".pdf",sep=""),h=3.5,w=3.5*5)
-par(mfrow=c(1,5),family="Times")
-co = rep(1,5)
+pdf(paste("clustering/Cluster_separation_stats_",opt$clusteralg,"_",opt$linkage,".pdf",sep=""),h=3.5,w=3.5*(maxK-1))
+par(mfrow=c(1,(maxK-1)),family="Times")
+co = rep(1,(maxK-1))
 co[which.max(ldunn)]=2
-barplot(ldunn ,names.arg = paste("K =",2:6) ,las=2,ylab="Dunn index",col= co)
-co = rep(1,5)
+barplot(ldunn ,names.arg = paste("K =",2:maxK) ,las=2,ylab="Dunn index",col= co)
+co = rep(1,(maxK-1))
 co[which.min(lwbr)]=2
-barplot(lwbr ,names.arg = paste("K =",2:6) ,las=2,ylab="Within-between SS ratio",col= co)
-co = rep(1,5)
+barplot(lwbr ,names.arg = paste("K =",2:maxK) ,las=2,ylab="Within-between SS ratio",col= co)
+co = rep(1,(maxK-1))
 co[which.max(lch)]=2
-barplot(lch ,names.arg = paste("K =",2:6) ,las=2,ylab="Calinski-Harabasz index",col= co)
-co = rep(1,5)
+barplot(lch ,names.arg = paste("K =",2:maxK) ,las=2,ylab="Calinski-Harabasz index",col= co)
+co = rep(1,(maxK-1))
 co[which.max(msil)]=2
-barplot(msil,names.arg = paste("K =",2:6) ,las=2,ylab="Mean Silhouette",col= co)
-co = rep(1,5)
+barplot(msil,names.arg = paste("K =",2:maxK) ,las=2,ylab="Mean Silhouette",col= co)
+co = rep(1,(maxK-1))
 co[which.max(corl)]=2
-barplot(corl,names.arg = paste("K =",2:6) ,las=2,ylab="Mean cophenetic distance",col= co)
+barplot(corl,names.arg = paste("K =",2:maxK) ,las=2,ylab="Mean cophenetic distance",col= co)
 dev.off()
 
 # plot PCA with clusters
-pdf(paste("PCA/PCA_",opt$clusteralg,"_",opt$linkage,".pdf",sep=""),h=3,w=3*5)
-par(mfrow=c(1,5),family="Times")
-s.class(pca$li,as.factor(clusters[[2]]$consensusClass),col=prettycolors,xax = 1,yax=2,addaxes = T,sub= paste("ConsensusClusterPlus", paste(paste("PC",1:2,": ",format(pca$eig[1:2]/sum(pca$eig)*100,digits=2),"%",sep=""),collapse = ", ")) )
-s.class(pca$li,as.factor(clusters[[3]]$consensusClass),col=prettycolors,xax = 1,yax=2,addaxes = T,sub= paste("ConsensusClusterPlus", paste(paste("PC",1:2,": ",format(pca$eig[1:2]/sum(pca$eig)*100,digits=2),"%",sep=""),collapse = ", ")) )
-s.class(pca$li,as.factor(clusters[[4]]$consensusClass),col=prettycolors,xax = 1,yax=2,addaxes = T,sub= paste("ConsensusClusterPlus", paste(paste("PC",1:2,": ",format(pca$eig[1:2]/sum(pca$eig)*100,digits=2),"%",sep=""),collapse = ", ")) )
-s.class(pca$li,as.factor(clusters[[5]]$consensusClass),col=prettycolors,xax = 1,yax=2,addaxes = T,sub= paste("ConsensusClusterPlus", paste(paste("PC",1:2,": ",format(pca$eig[1:2]/sum(pca$eig)*100,digits=2),"%",sep=""),collapse = ", ")) )
-s.class(pca$li,as.factor(clusters[[6]]$consensusClass),col=prettycolors,xax = 1,yax=2,addaxes = T,sub= paste("ConsensusClusterPlus", paste(paste("PC",1:2,": ",format(pca$eig[1:2]/sum(pca$eig)*100,digits=2),"%",sep=""),collapse = ", ")) )
+pdf(paste("PCA/PCA_",opt$clusteralg,"_",opt$linkage,".pdf",sep=""),h=3,w=3*(maxK-1))
+par(mfrow=c(1,(maxK-1)),family="Times")
+for(i in 2:(maxK)) s.class(pca$li,as.factor(clusters[[i]]$consensusClass),col=prettycolors,xax = 1,yax=2,addaxes = T,sub= paste("ConsensusClusterPlus", paste(paste("PC",1:2,": ",format(pca$eig[1:2]/sum(pca$eig)*100,digits=2),"%",sep=""),collapse = ", ")) )
 dev.off()
 
 # save results
