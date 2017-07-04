@@ -29,7 +29,7 @@ library(fpc)
 library(cluster)
 
 # define some nice colors
-prettycolors = c(1,2,rgb(0,152/255,219/255),rgb(233/255,131/255,0),rgb(0,155/255,118/255),rgb(0.5,0.5,0.5),rgb(0,124,146),rgb(178,111,22),rgb(234,171,0),rgb(83,40,79))
+prettycolors = c(1,2,rgb(0,152/255,219/255),rgb(233/255,131/255,0),rgb(0,155/255,118/255),rgb(0.5,0.5,0.5),rgb(0,124/255,146/255),rgb(178/255,111/255,22/255),rgb(234/255,171/255,0),rgb(83/255,40/255,79/255))
 
 ### custom htseqcount read for compatibility with htseq 0.8 
 DESeqDataSetFromHTSeqCount2 <- function( sampleTable, directory=".", design, ignoreRank=FALSE, ...) 
