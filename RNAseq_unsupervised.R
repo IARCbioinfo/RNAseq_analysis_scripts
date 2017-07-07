@@ -58,7 +58,7 @@ print(n)
 outdir    <- opt$out
 dir.create(outdir, showWarnings = FALSE)
 sampleFiles  <- grep(opt$pattern,list.files(directory),value=TRUE) # find names
-sampleTable <- data.frame(sampleName = paste( "sample", 1:length(sampleFiles),sep = "") ,fileName = sampleFiles) # table for DESeq
+sampleTable <- data.frame(sampleName = sampleFiles ,fileName = sampleFiles) # table for DESeq
 ddsHTSeq <- DESeqDataSetFromHTSeqCount2(sampleTable = sampleTable,directory = directory, design= ~ 1)
 ddsHTSeq <- ddsHTSeq[ rowSums(counts(ddsHTSeq)) > 1, ] # filter out rows with no counts
 setwd(outdir)
