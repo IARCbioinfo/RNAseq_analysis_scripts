@@ -96,7 +96,8 @@ This script performs supervised analyses (Differential Expression Analysis) from
 ## Prerequisites
 This R script requires the following package:
 - DESeq2
-Other optional packages:
+
+Depending on the options used, the following packages are also required:
 - BiocParallel (with option -c)
 - IHW (with option -m)
 
