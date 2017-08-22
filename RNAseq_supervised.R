@@ -21,8 +21,7 @@ opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
 
 ### custom htseqcount read for compatibility with htseq 0.8 
-DESeqDataSetFromHTSeqCount2 <- function( sampleTable, directory=".", design, ignoreRank=FALSE, ...) 
-{
+DESeqDataSetFromHTSeqCount2 <- function( sampleTable, directory=".", design, ignoreRank=FALSE, ...){
   if (missing(design)) stop("design is missing")
   l <- lapply( as.character( sampleTable[,2] ), function(fn) read.table( file.path( directory, fn ), fill=T ) )
   if( ! all( sapply( l, function(a) all( a$V1 == l[[1]]$V1 ) ) ) )
@@ -73,32 +72,36 @@ if(opt$cores>1){
 }
 dds = DESeq(ddsHTSeq,parallel = para) 
 
-ffun = NULL
+require(gtools)
+rna = resultsNames(dds)[-1]
+per = combinations(3,2,rna)
+res = vector("list",nrow(per))
 if(opt$IHW){
   library("IHW")
-  ffun = ihw  
+  for(i in 1:length(res)) res[[i]] <- results(dds,parallel = para, alpha=opt$FDR,filterFun = ihw, contrast = list(per[i,1],per[i,2]) )
+}else{
+  for(i in 1:length(res)) res[[i]] <- results(dds,parallel = para, alpha=opt$FDR, contrast = list(per[i,1],per[i,2]) )
 }
 
-res <- results(dds,parallel = para, alpha=opt$FDR,filterFun = ffun)
-resOrdered <- res[order(res$padj),]
+resOrdered <- lapply(res, function(x) x[order(x$padj),] )
 #summary(res)
 
 # get gene names
 #resOrdered$genes <- 
 
 # plot
-pdf("LogFoldChanges_DE.pdf",h=3.5,w=3.5)
-par(mfrow=c(1,1),family="Times")
-plotMA(res, ylim=c(-2,2))
+pdf("LogFoldChanges_DE.pdf",h=3.5,w=3.5*length(res))
+par(mfrow=c(1,length(res)),family="Times")
+for(i in 1:length(res)) plotMA(res[[i]], ylim=c(-2,2),main=paste(per[i,1],"vs",per[i,2]))
 dev.off()
 
-pdf("Counts_smallestpval.pdf",h=3.5,w=3.5)
-par(mfrow=c(1,1),family="Times")
-plotCounts(dds, gene=which.min(res$padj), intgroup=colnames(groups)[1] )
+pdf("Counts_smallestpval.pdf",h=3.5,w=3.5*length(res))
+par(mfrow=c(1,length(res)),family="Times")
+for(i in 1:length(res)) plotCounts(dds, gene=which.min(res[[i]]$padj), intgroup=colnames(groups)[1],main=paste(per[i,1],"vs",per[i,2]) )
 dev.off()
 
 # save top gene loadings
-write.csv(resOrdered,file="Genes_DE.csv")
+for(i in 1:length(resOrdered)) write.csv(resOrdered[[i]],file=paste("Genes_DE_",per[i,1],"_vs_",per[i,2],".csv",sep="") )
 
 # save results
 save(resOrdered, file = "RNAseq_supervised.RData")
