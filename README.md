@@ -9,16 +9,13 @@ This script performs unsupervised analyses (Principal Component Analysis and clu
 This R script requires the following packages:
 - ConsensusClusterPlus
 - ade4
-- AnnotationDbi
-- org.Hs.eg.db
 - DESeq2
-- biomaRt
 - fpc
 
 
 ### Usage
 ```bash
-Rscript cluster.R [options]
+Rscript RNAseq_unsupervised.R [options]
 ```
 
 | **PARAMETER** | **DEFAULT** | **DESCRIPTION** |
@@ -34,7 +31,7 @@ Rscript cluster.R [options]
 
 For example, one can type
 ```bash
-Rscript cluster.R -f input -p count -t rld -o output/ -n 500
+Rscript RNAseq_unsupervised.R -f input -p count -t rld -o output/ -n 500
 ```
 
 ### Details
@@ -65,7 +62,7 @@ This R script requires the following packages:
 
 ### Usage
 ```bash
-Rscript cluster.R [options]
+Rscript RNAseq_unsupervised_compare.R [options]
 ```
 
 | **PARAMETER** | **DEFAULT** | **DESCRIPTION** |
@@ -77,7 +74,7 @@ Rscript cluster.R [options]
 
 For example, one can type
 ```bash
-Rscript cluster.R -R RNAseq_unsupervise.RData -i variables.txt -o output/
+Rscript RNAseq_unsupervised_compare.R -R RNAseq_unsupervise.RData -i variables.txt -o output/
 ```
 
 ### Details
@@ -91,3 +88,47 @@ For each column (i.e., variable) of the input table, a .pdf file with *K* rows, 
 - Column 1 represents the first 2 PCs of the PCA; colored ellipses correspond to the clusters of the *clusters* variable from the .RData file, and point colors correspond to the levels of the variable
 - Column 2 represents the best matching between the clustering and the variable
 - Column 3 represents the null distribution of the best matching (gray), the observed best matching and the p-value of the best matching (red)
+
+## Supervised analysis: *RNAseq_supervised.R*
+
+This script performs supervised analyses (Differential Expression Analysis) from htseq-count outputs. 
+
+## Prerequisites
+This R script requires the following package:
+- DESeq2
+
+Depending on the options used, the following packages are also required:
+- BiocParallel (with option -c)
+- IHW (with option -m)
+
+### Usage
+```bash
+Rscript RNAseq_supervised.R [options]
+```
+
+| **PARAMETER** | **DEFAULT** | **DESCRIPTION** |
+|-----------|--------------:|-------------| 
+*-f* | . | folder with count files |
+*-g* | . | file with sample groups |
+*-o* | out | output directory name |
+*-p* |  count.txt | pattern for count file names |
+*-c*   |  1 | number of cores for statistical computation |
+*-q* | 0.1 | False Discovery Rate |
+*-m* | FALSE | Use Independent Hypothesis Weighting for multiple-testing procedure |
+*-h*    |  | Show help message and exit|
+
+
+
+For example, one can type
+```bash
+Rscript RNAseq_supervised.R -f input -g groups.txt -o output/
+```
+
+### Details
+The script performs DE analysis of gene count data under a Poisson glm with package *DESeq2*
+
+### Output
+- a plot of fold changes as a function of normalized counts
+- a plot of normalized counts of the most significant DE gene, as a function of the group
+- a .csv file with gene names, fold changes, and p-values
+- a .RData file with 1 object: the deseq2 results table
