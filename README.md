@@ -96,6 +96,7 @@ This script performs supervised analyses (Differential Expression Analysis) from
 ## Prerequisites
 This R script requires the following package:
 - DESeq2
+- gtools
 
 Depending on the options used, the following packages are also required:
 - BiocParallel (with option -c)
@@ -125,10 +126,10 @@ Rscript RNAseq_supervised.R -f input -g groups.txt -o output/
 ```
 
 ### Details
-The script performs DE analysis of gene count data under a Poisson glm with package *DESeq2*
+The script performs DE analysis of gene count data under a Poisson glm with package *DESeq2*. When multiple groups are present (e.g., A, B, and C), computes results for contrasts corresponding to all combinations of 2 groups (A vs B, A vs C, and B vs C).
 
 ### Output
 - a plot of fold changes as a function of normalized counts
-- a plot of normalized counts of the most significant DE gene, as a function of the group
-- a .csv file with gene names, fold changes, and p-values
+- plots of normalized counts of the most significant DE gene, as a function of the group, for each pair of group levels
+- .csv files with gene names, fold changes, and p-values, for each combination of 2 groups
 - a .RData file with 1 object: the deseq2 results table
