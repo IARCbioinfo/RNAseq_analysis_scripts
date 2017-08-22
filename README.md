@@ -52,3 +52,42 @@ The script involves 3 steps
 - csv file with the genes with the greatest loadings in the first PC
 #### Clustering
 - a folder with plots from ConsensusClusterPlus
+
+## Compare an unsupervised analysis with a list of variables: *RNAseq_unsupervised_compare.R*
+
+This script compares the result of an unsupervised analyses (Principal Component Analysis and clustering) obtained for example using script *RNAseq_unsupervised_compare.R* with an arbitrary number of variables (categorical or continuous).
+
+## Prerequisites
+This R script requires the following packages:
+- ade4
+- permute
+
+
+### Usage
+```bash
+Rscript cluster.R [options]
+```
+
+| **PARAMETER** | **DEFAULT** | **DESCRIPTION** |
+|-----------|--------------:|-------------| 
+*-R* | . | .RData file with results from clustering in variable *clusters* and results from PCA in variable *pca* |
+*-i* | . | name of input file with variables in column and variable names as first line |
+*-o* | out | output file preffix |
+*-h*    |  | Show help message and exit|
+
+For example, one can type
+```bash
+Rscript cluster.R -R RNAseq_unsupervise.RData -i variables.txt -o output/
+```
+
+### Details
+For each clustering present in variable *cluster*, the script involves 3 steps
+- **Plotting** the variables on the first two PC axes
+- **Computing the best matching** between clusters and the levels of the variable *(note: if the variable is continuous, categories are formed by subdividing the range of the variable into intervals of the same size)*
+- **Testing the significance of the best matching** by computing a null distribution of matchings across 1000 permutations
+
+### Output
+For each column (i.e., variable) of the input table, a .pdf file with *K* rows, where *K* is the number of clusterings in variable *cluster*, and 3 columns: 
+- Column 1 represents the first 2 PCs of the PCA; colored ellipses correspond to the clusters of the *clusters* variable from the .RData file, and point colors correspond to the levels of the variable
+- Column 2 represents the best matching between the clustering and the variable
+- Column 3 represents the null distribution of the best matching (gray), the observed best matching and the p-value of the best matching (red)
