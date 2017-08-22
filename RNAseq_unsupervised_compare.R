@@ -25,7 +25,7 @@ prettycolors = c(1,2,rgb(0,152/255,219/255),rgb(233/255,131/255,0),rgb(0,155/255
 contcol      = function(x){
   xx = x
   xx[is.na(x)] = 0
-  xnorm = (xx-min(xx))/(max(xx)-min(xx))
+  xnorm = (xx-min(xx,na.rm=T))/(max(xx,na.rm=T)-min(xx,na.rm=T))
   return( rgb(1,1-xnorm,1-xnorm) )
 }
 
@@ -100,7 +100,7 @@ varnames  = colnames(variables)
 
 maxK = length(clusters)
 
-lims = c(min(pca$li[,1:2]),max(pca$li[,1:2]))
+lims = c(min(pca$li[,1:2]),max(pca$li[,1:2],na.rm=T))
 
 for(k in 1:ncol(variables)){
 pdf(paste(opt$out,"Compare_clust_",varnames[k],".pdf",sep=""),w=4*3,h=4*(maxK-1))
@@ -109,13 +109,13 @@ for(i in 2:(maxK)){
   plot(-1000,-1000,xlim=lims,ylim=lims,xlab=paste("PC",1,": ",format(pca$eig[1]/sum(pca$eig)*100,digits=2),"%",sep=""), ylab=paste("PC",2,": ",format(pca$eig[2]/sum(pca$eig)*100,digits=2),"%",sep="") ,main="PCA")
   if(class(variables[,k])!="numeric"){
     mtmp      = match2(clusters[[i]]$consensusClass,variables[,k])
-    newclass1 = sapply(1:max(clusters[[i]]$consensusClass), function(j) mtmp[[2]][clusters[[i]]$consensusClass==j ][1] )
-    newclass2 = sapply(1:max(as.numeric(variables[,k])), function(j) mtmp[[3]][as.numeric(variables[,k])==j ][1] )
+    newclass1 = sapply(1:max(clusters[[i]]$consensusClass,na.rm=T), function(j) mtmp[[2]][clusters[[i]]$consensusClass==j ][1] )
+    newclass2 = sapply(1:max(as.numeric(variables[,k]),na.rm=T), function(j) mtmp[[3]][as.numeric(variables[,k])==j ][1] )
     
     #PCA
     s.class(pca$li,as.factor(clusters[[i]]$consensusClass),col=clusters[[i]]$clrs[[3]][newclass1],xax = 1,yax=2,addaxes = T,sub= "" ,add= T,cpoint = 0)
     points(pca$li[,1],pca$li[,2],col=prettycolors[newclass2][as.numeric(variables[,k])],pch=16)
-    legend("topright",legend = levels(variables[,k]),col=prettycolors[newclass2][1:max(as.numeric(variables[,k]))],pch=16)
+    legend("topright",legend = levels(variables[,k]),col=prettycolors[newclass2][1:max(as.numeric(variables[,k]),na.rm=T)],pch=16)
     
     #clustering
     ordtmp = nicesort(clusters[[i]]$consensusClass,variables[,k])
@@ -135,8 +135,8 @@ for(i in 2:(maxK)){
     #clustering
     grsvals = variables[,k]
     grsvals2= grsvals[!is.na(grsvals)] 
-    grs = cut( grsvals2 ,seq(min(grsvals2),max(grsvals2),length.out=i+1) ,include.lowest = T)
-    cuts = seq( min(grsvals2),max(grsvals2),length.out = i+1)
+    grs = cut( grsvals2 ,seq(min(grsvals2),max(grsvals2,na.rm=T),length.out=i+1) ,include.lowest = T)
+    cuts = seq( min(grsvals2),max(grsvals2,na.rm=T),length.out = i+1)
     meds = cuts[1:i] + (cuts[2]-cuts[1])/2
     idmeds = sapply(meds, function(x) which.min(abs(x-grsvals2) )) 
     

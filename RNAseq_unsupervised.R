@@ -54,7 +54,6 @@ DESeqDataSetFromHTSeqCount2 <- function( sampleTable, directory=".", design, ign
 ## build count table from count files
 directory <- opt$folder
 n = opt$nbgenes
-print(n)
 outdir    <- opt$out
 dir.create(outdir, showWarnings = FALSE)
 sampleFiles  <- grep(opt$pattern,list.files(directory),value=TRUE) # find names
