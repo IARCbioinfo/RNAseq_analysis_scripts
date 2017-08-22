@@ -18,6 +18,7 @@ opt = parse_args(opt_parser);
 
 # load libraries
 library(ade4)
+require(permute)
 
 # define some nice colors
 prettycolors = c(1,2,rgb(0,152/255,219/255),rgb(233/255,131/255,0),rgb(0,155/255,118/255),rgb(0.5,0.5,0.5),rgb(0,124/255,146/255),rgb(178/255,111/255,22/255),rgb(234/255,171/255,0),rgb(83/255,40/255,79/255))
@@ -30,7 +31,6 @@ contcol      = function(x){
 
 # define useful functions
 match2 = function(v1i,v2i){
-  require(permute)
   v1 = as.numeric(v1i)
   v2 = as.numeric(v2i)
   if(max(v1,na.rm = T)>=max(v2,na.rm = T)){ #smallest must be v2
@@ -106,7 +106,7 @@ for(k in 1:ncol(variables)){
 pdf(paste(opt$out,"Compare_clust_",varnames[k],".pdf",sep=""),w=4*3,h=4*(maxK-1))
 par(mfrow=c((maxK-1),3),family="Times")
 for(i in 2:(maxK)){
-  plot(-1000,-1000,xlim=lims,ylim=lims,xlab=paste("PC",1,": ",format(pca$eig[1]/sum(pca$eig)*100,digits=2),"%",sep=""), ylab=paste("PC",2,": ",format(pca$eig[2]/sum(pca$eig)*100,digits=2),"%",sep="") )
+  plot(-1000,-1000,xlim=lims,ylim=lims,xlab=paste("PC",1,": ",format(pca$eig[1]/sum(pca$eig)*100,digits=2),"%",sep=""), ylab=paste("PC",2,": ",format(pca$eig[2]/sum(pca$eig)*100,digits=2),"%",sep="") ,main="PCA")
   if(class(variables[,k])!="numeric"){
     mtmp      = match2(clusters[[i]]$consensusClass,variables[,k])
     newclass1 = sapply(1:max(clusters[[i]]$consensusClass), function(j) mtmp[[2]][clusters[[i]]$consensusClass==j ][1] )
@@ -121,7 +121,7 @@ for(i in 2:(maxK)){
     ordtmp = nicesort(clusters[[i]]$consensusClass,variables[,k])
     
     #layout(m)
-    plot(-10,-10,xlim=c(-4,14),ylim=c(-length(mtmp[[2]])/10,length(mtmp[[2]])),axes=F,xlab="",ylab="",main=paste("Matching Clusters/",varnames[k],sep="") )
+    plot(-10,-10,xlim=c(-6,16),ylim=c(-length(mtmp[[2]])/10,length(mtmp[[2]])),axes=F,xlab="",ylab="",main=paste("Matching Clusters/",varnames[k],sep="") )
     for(ii in 1:length(mtmp[[2]])) polygon(c(0,0,4.5,4.5),c(ii,ii+1,ii+1,ii),border = NA,col=clusters[[i]]$clrs[[3]][newclass1][clusters[[i]]$consensusClass][ordtmp][ii])
     for(ii in 1:length(mtmp[[2]])){if((clusters[[i]]$clrs[[3]][mtmp[[2]]][ordtmp][ii])!=(clusters[[i]]$clrs[[3]][mtmp[[3]]][ordtmp][ii]))  segments(4.6,ii,5.4 ,ii ,col=rgb(1,0,0,0.5)) }
     for(ii in 1:length(mtmp[[2]])) polygon(c(5.5,5.5,10,10),c(ii,ii+1,ii+1,ii),border = NA,col=prettycolors[newclass2][variables[,k]][ordtmp][ii])
@@ -150,7 +150,7 @@ for(i in 2:(maxK)){
     ordtmp = nicesort(mtmp[[2]],mtmp[[3]])
     
     #layout(m)
-    plot(-10,-10,xlim=c(-4,14),ylim=c(-20,length(mtmp[[2]])),axes=F,xlab="",ylab="",main=paste("Matching Clusters/",varnames[k],sep="") )
+    plot(-10,-10,xlim=c(-6,16),ylim=c(-20,length(mtmp[[2]])),axes=F,xlab="",ylab="",main=paste("Matching Clusters/",varnames[k],sep="") )
     for(ii in 1:length(mtmp[[2]])) polygon(c(0,0,4.5,4.5),c(ii,ii+1,ii+1,ii),border = NA,col=clusters[[i]]$clrs[[3]][clusters[[i]]$consensusClass[!is.na(grsvals)]][ordtmp][ii])
     for(ii in 1:length(mtmp[[2]])){if((clusters[[i]]$clrs[[3]][mtmp[[2]]][ordtmp][ii])!=(clusters[[i]]$clrs[[3]][mtmp[[3]]][ordtmp][ii]))  segments(4.6,ii,5.4 ,ii ,col=rgb(1,0,0,0.5)) }
     for(ii in 1:length(mtmp[[2]])) polygon(c(5.5,5.5,10,10),c(ii,ii+1,ii+1,ii),border = NA,col=contcol(meds)[grs][ordtmp][ii])
@@ -163,5 +163,8 @@ for(i in 2:(maxK)){
   pm     = mean( rmatch> mtmp[[1]] )
   plotmatch(mtmp,rmatch,paste("Pr of best matching Cluster/",varnames[k],sep=""),pm,n=nrow(pca$li),off=15)
 }
+
 dev.off()
 }
+
+
