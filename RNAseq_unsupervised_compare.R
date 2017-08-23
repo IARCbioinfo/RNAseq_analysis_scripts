@@ -28,7 +28,7 @@ contcol      = function(x){
   xx = x
   xx[is.na(x)] = 0
   xnorm = (xx-min(xx,na.rm=T))/(max(xx,na.rm=T)-min(xx,na.rm=T))
-  return( rgb(1,1-xnorm,1-xnorm) )
+  return( rgb(1,1-xnorm/1.2,1-xnorm/1.2) )
 }
 
 # define useful functions
@@ -109,7 +109,7 @@ pdf(paste(opt$out,"Compare_clust_",varnames[k],".pdf",sep=""),w=4*3,h=4*(maxK-1)
 par(mfrow=c((maxK-1),3),family="Times")
 for(i in minK:maxK){
   plot(-1000,-1000,xlim=lims,ylim=lims,xlab=paste("PC",1,": ",format(pca$eig[1]/sum(pca$eig)*100,digits=2),"%",sep=""), ylab=paste("PC",2,": ",format(pca$eig[2]/sum(pca$eig)*100,digits=2),"%",sep="") ,main="PCA")
-  if(class(variables[,k])!="numeric"){
+  if(!(class(variables[,k]) %in% c("numeric","integer") ) ){
     grsvals = variables[,k]
     grs     = grsvals[!is.na(grsvals)] 
     cctmp   = clusters[[i]]$consensusClass[!is.na(grsvals)]
@@ -144,6 +144,7 @@ for(i in minK:maxK){
     cuts = seq( min(grsvals2),max(grsvals2,na.rm=T),length.out = i+1)
     meds = cuts[1:i] + (cuts[2]-cuts[1])/2
     idmeds = sapply(meds, function(x) which.min(abs(x-grsvals2) )) 
+    cctmp   = clusters[[i]]$consensusClass[!is.na(grsvals)]
     
     #PCA
     s.class(pca$li,as.factor(clusters[[i]]$consensusClass),col=clusters[[i]]$clrs[[3]],xax = 1,yax=2,addaxes = T,sub= "" ,add= T,cpoint = 0)
@@ -151,19 +152,19 @@ for(i in minK:maxK){
     legend("topright",legend = format(grsvals2[idmeds],digits=2) ,col=contcol(grsvals2)[floor(idmeds)],pch=16,pt.cex = (grsvals2/max(grsvals2)*2)[floor(idmeds)]  )
     
     #clustering
-    mtmp   = match2(clusters[[i]]$consensusClass[!is.na(grsvals)],grs)
+    mtmp   = match2(cctmp,grs)
     ordtmp = nicesort(mtmp[[2]],mtmp[[3]])
     
     #layout(m)
     plot(-10,-10,xlim=c(-6,16),ylim=c(-20,length(mtmp[[2]])),axes=F,xlab="",ylab="",main=paste("Matching Clusters/",varnames[k],sep="") )
-    for(ii in 1:length(mtmp[[2]])) polygon(c(0,0,4.5,4.5),c(ii,ii+1,ii+1,ii),border = NA,col=clusters[[i]]$clrs[[3]][clusters[[i]]$consensusClass[!is.na(grsvals)]][ordtmp][ii])
+    for(ii in 1:length(mtmp[[2]])) polygon(c(0,0,4.5,4.5),c(ii,ii+1,ii+1,ii),border = NA,col=clusters[[i]]$clrs[[3]][cctmp][ordtmp][ii])
     for(ii in 1:length(mtmp[[2]])){if((clusters[[i]]$clrs[[3]][mtmp[[2]]][ordtmp][ii])!=(clusters[[i]]$clrs[[3]][mtmp[[3]]][ordtmp][ii]))  segments(4.6,ii,5.4 ,ii ,col=rgb(1,0,0,0.5)) }
     for(ii in 1:length(mtmp[[2]])) polygon(c(5.5,5.5,10,10),c(ii,ii+1,ii+1,ii),border = NA,col=contcol(meds)[grs][ordtmp][ii])
-    legend("bottomleft", legend=paste("Cluster ",unique(clusters[[i]]$consensusClass),sep="") , fill =clusters[[i]]$clrs[[3]])
+    legend("bottomleft", legend=paste("Cluster ",unique(cctmp),sep="") , fill =clusters[[i]]$clrs[[3]])
     legend("bottomright", legend=unique(grs) , fill =contcol(meds))
     legend("bottom", legend="Mismatch" , lty=1,lwd=2,col=rgb(1,0,0,0.5))
     
-    rmatch = sapply(1:1000, function(j){match2(sample(clusters[[i]]$consensusClass[!is.na(grsvals)]),grs )[[1]] }  )
+    rmatch = sapply(1:1000, function(j){match2(sample(cctmp),grs )[[1]] }  )
   }
   pm     = mean( rmatch> mtmp[[1]] )
   plotmatch(mtmp,rmatch,paste("Pr of best matching Cluster/",varnames[k],sep=""),pm,n=nrow(pca$li),off=15)
