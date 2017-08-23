@@ -69,6 +69,8 @@ Rscript RNAseq_unsupervised_compare.R [options]
 |-----------|--------------:|-------------| 
 *-R* | . | .RData file with results from clustering in variable *clusters* and results from PCA in variable *pca* |
 *-i* | . | name of input file with variables in column and variable names as first line |
+*-m* | 2 | minimum number of clusters |
+*-M* | 5 | maximum number of clusters |
 *-o* | out | output file preffix |
 *-h*    |  | Show help message and exit|
 
