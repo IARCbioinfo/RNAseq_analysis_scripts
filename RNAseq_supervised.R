@@ -55,7 +55,7 @@ dir.create(outdir, showWarnings = FALSE)
 sampleFiles <- grep(opt$pattern,list.files(directory),value=TRUE) # find names
 sampleTable <- data.frame(sampleName = paste( "sample", 1:length(sampleFiles),sep = "") ,fileName = sampleFiles, groups) # table for DESeq
 head(sampleTable)
-ddsHTSeq <- DESeqDataSetFromHTSeqCount2(sampleTable = sampleTable,directory = directory, design= as.formula( paste('~',colnames(groups)) ) )
+ddsHTSeq <- DESeqDataSetFromHTSeqCount2(sampleTable = sampleTable,directory = directory, design= as.formula( paste('~',paste(colnames(groups),collapse = " + ")  ) ) )
 ddsHTSeq <- ddsHTSeq[ rowSums(counts(ddsHTSeq)) > 1, ] # filter out rows with no counts
 setwd(outdir)
 #dir.create("other", showWarnings = FALSE)
@@ -72,35 +72,48 @@ if(opt$cores>1){
 dds = DESeq(ddsHTSeq,parallel = para) 
 
 require(gtools)
-rna = resultsNames(dds)[-1]
-per = combinations(nrow(per),2,rna)
-res = vector("list",nrow(per))
+Vnames = colnames(groups)
+res = vector("list",length(Vnames))
+per = vector("list",length(Vnames))
+for(i in 1:length(Vnames)){
+  rna = levels(groups[,i])
+  per[[i]] = combinations(length(rna),2,rna)
+  res[[i]] = vector("list",nrow(per[[i]]))
+}
 if(opt$IHW){
   library("IHW")
   for(i in 1:length(res)) res[[i]] <- results(dds,parallel = para, alpha=opt$FDR,filterFun = ihw, contrast = list(per[i,1],per[i,2]) )
 }else{
-  for(i in 1:length(res)) res[[i]] <- results(dds,parallel = para, alpha=opt$FDR, contrast = list(per[i,1],per[i,2]) )
+  for(i in 1:length(res)){
+    for(j in 1:length(res[[i]])) res[[i]][[j]] <- results(dds,parallel = para, alpha=opt$FDR, contrast = c(Vnames[i],per[[i]][j,1],per[[i]][j,2]) )
+  }
 }
 
-resOrdered <- lapply(res, function(x) x[order(x$padj),] )
+resOrdered <- lapply(res, function(x) lapply(x, function(y) y[order(y$padj),] ) )
 #summary(res)
 
 # get gene names
 #resOrdered$genes <- 
 
 # plot
-pdf("LogFoldChanges_DE.pdf",h=3.5,w=3.5*length(res))
-par(mfrow=c(1,length(res)),family="Times")
-for(i in 1:length(res)) plotMA(res[[i]], ylim=c(-2,2),main=paste(per[i,1],"vs",per[i,2]))
-dev.off()
+for(i in 1:length(res)){
+  pdf(paste("LogFoldChanges_DE_",Vnames[i],".pdf",sep=""),h=3.5,w=3.5*length(res[[i]]))
+  par(mfrow=c(1,length(res[[i]])),family="Times")
+  for(j in 1:length(res[[i]])) plotMA(res[[i]][[j]], ylim=c(-2,2),main=paste(per[[i]][j,1],"vs",per[[i]][j,2]))
+  dev.off()
+}
 
-pdf("Counts_smallestpval.pdf",h=3.5,w=3.5*length(res))
-par(mfrow=c(1,length(res)),family="Times")
-for(i in 1:length(res)) plotCounts(dds, gene=which.min(res[[i]]$padj), intgroup=colnames(groups)[1],main=paste(per[i,1],"vs",per[i,2]) )
-dev.off()
+for(i in 1:length(res)){
+  pdf(paste("Counts_smallestpval_",Vnames[i],".pdf",sep=""),h=3.5,w=3.5*length(res[[i]]))
+  par(mfrow=c(1,length(res[[i]])),family="Times")
+  for(j in 1:length(res[[i]])) plotCounts(dds, gene=which.min(res[[i]][[j]]$padj), intgroup=Vnames[i],main=paste(per[[i]][j,1],"vs",per[[i]][j,2]) )
+  dev.off()
+}
 
 # save top gene loadings
-for(i in 1:length(resOrdered)) write.csv(resOrdered[[i]],file=paste("Genes_DE_",per[i,1],"_vs_",per[i,2],".csv",sep="") )
+for(i in 1:length(resOrdered)){
+  for(j in 1:length(resOrdered[[i]])) write.csv(resOrdered[[i]][[j]],file=paste("Genes_DE_",Vnames[i],"_",per[[i]][j,1],"_vs_",per[[i]][j,2],".csv",sep="") )
+}
 
 # save results
 save(resOrdered, file = "RNAseq_supervised.RData")
