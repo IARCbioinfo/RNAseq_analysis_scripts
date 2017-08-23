@@ -10,6 +10,8 @@ library("optparse")
 option_list = list(
   make_option(c("-r", "--rdata"), type="character", default=".", help=".RData file with clustering and PCA results [default= %default]", metavar="character"),
   make_option(c("-i", "--input"), type="character", default=".", help="input file with groups [default= %default]", metavar="character"),
+  make_option(c("-m", "--Kmin"), type="numeric", default=2, help="minimum number of clusters [default= %default]", metavar="numeric"),
+  make_option(c("-M", "--Kmax"), type="numeric", default=5, help="maximum number of clusters [default= %default]", metavar="numeric"),
   make_option(c("-o", "--out"), type="character", default="out", help="output directory name [default= %default]", metavar="character")
 ); 
 
@@ -93,19 +95,20 @@ nicesort <- function(v1,v2){
 # load data
 #load("merged_TCGA_EGA/RNAseq_unsupervised_km_complete.RData")
 load(opt$rdata)
+minK = opt$Kmin
+maxK = opt$Kmax
 
 #variables = read.table("metadata_merged.txt",h=T)
 variables = read.table(opt$input,h=T)
 varnames  = colnames(variables)
 
-maxK = length(clusters)
 
 lims = c(min(pca$li[,1:2]),max(pca$li[,1:2],na.rm=T))
 
 for(k in 1:ncol(variables)){
 pdf(paste(opt$out,"Compare_clust_",varnames[k],".pdf",sep=""),w=4*3,h=4*(maxK-1))
 par(mfrow=c((maxK-1),3),family="Times")
-for(i in 2:(maxK)){
+for(i in minK:maxK){
   plot(-1000,-1000,xlim=lims,ylim=lims,xlab=paste("PC",1,": ",format(pca$eig[1]/sum(pca$eig)*100,digits=2),"%",sep=""), ylab=paste("PC",2,": ",format(pca$eig[2]/sum(pca$eig)*100,digits=2),"%",sep="") ,main="PCA")
   if(class(variables[,k])!="numeric"){
     mtmp      = match2(clusters[[i]]$consensusClass,variables[,k])
