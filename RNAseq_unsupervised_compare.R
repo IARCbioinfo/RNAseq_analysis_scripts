@@ -20,7 +20,7 @@ opt = parse_args(opt_parser);
 
 # load libraries
 library(ade4)
-require(permute)
+#require(permute)
 
 # define some nice colors
 prettycolors = c(1,2,rgb(0,152/255,219/255),rgb(233/255,131/255,0),rgb(0,155/255,118/255),rgb(0.5,0.5,0.5),rgb(0,124/255,146/255),rgb(178/255,111/255,22/255),rgb(234/255,171/255,0),rgb(83/255,40/255,79/255))
@@ -102,7 +102,6 @@ maxK = opt$Kmax
 variables = read.table(opt$input,h=T)
 varnames  = colnames(variables)
 
-
 lims = c(min(pca$li[,1:2]),max(pca$li[,1:2],na.rm=T))
 
 for(k in 1:ncol(variables)){
@@ -111,9 +110,12 @@ par(mfrow=c((maxK-1),3),family="Times")
 for(i in minK:maxK){
   plot(-1000,-1000,xlim=lims,ylim=lims,xlab=paste("PC",1,": ",format(pca$eig[1]/sum(pca$eig)*100,digits=2),"%",sep=""), ylab=paste("PC",2,": ",format(pca$eig[2]/sum(pca$eig)*100,digits=2),"%",sep="") ,main="PCA")
   if(class(variables[,k])!="numeric"){
-    mtmp      = match2(clusters[[i]]$consensusClass,variables[,k])
-    newclass1 = sapply(1:max(clusters[[i]]$consensusClass,na.rm=T), function(j) mtmp[[2]][clusters[[i]]$consensusClass==j ][1] )
-    newclass2 = sapply(1:max(as.numeric(variables[,k]),na.rm=T), function(j) mtmp[[3]][as.numeric(variables[,k])==j ][1] )
+    grsvals = variables[,k]
+    grs     = grsvals[!is.na(grsvals)] 
+    cctmp   = clusters[[i]]$consensusClass[!is.na(grsvals)]
+    mtmp    = match2(cctmp,grs)
+    newclass1 = sapply(1:max(clusters[[i]]$consensusClass,na.rm=T), function(j) mtmp[[2]][cctmp==j ][1] )
+    newclass2 = sapply(1:max(as.numeric(grs),na.rm=T), function(j) mtmp[[3]][as.numeric(grs)==j ][1] )
     
     #PCA
     s.class(pca$li,as.factor(clusters[[i]]$consensusClass),col=clusters[[i]]$clrs[[3]][newclass1],xax = 1,yax=2,addaxes = T,sub= "" ,add= T,cpoint = 0)
@@ -121,19 +123,19 @@ for(i in minK:maxK){
     legend("topright",legend = levels(variables[,k]),col=prettycolors[newclass2][1:max(as.numeric(variables[,k]),na.rm=T)],pch=16)
     
     #clustering
-    ordtmp = nicesort(clusters[[i]]$consensusClass,variables[,k])
+    ordtmp = nicesort(cctmp,grs)
     
     #layout(m)
     plot(-10,-10,xlim=c(-6,16),ylim=c(-length(mtmp[[2]])/10,length(mtmp[[2]])),axes=F,xlab="",ylab="",main=paste("Matching Clusters/",varnames[k],sep="") )
-    for(ii in 1:length(mtmp[[2]])) polygon(c(0,0,4.5,4.5),c(ii,ii+1,ii+1,ii),border = NA,col=clusters[[i]]$clrs[[3]][newclass1][clusters[[i]]$consensusClass][ordtmp][ii])
+    for(ii in 1:length(mtmp[[2]])) polygon(c(0,0,4.5,4.5),c(ii,ii+1,ii+1,ii),border = NA,col=clusters[[i]]$clrs[[3]][newclass1][cctmp][ordtmp][ii])
     for(ii in 1:length(mtmp[[2]])){if((clusters[[i]]$clrs[[3]][mtmp[[2]]][ordtmp][ii])!=(clusters[[i]]$clrs[[3]][mtmp[[3]]][ordtmp][ii]))  segments(4.6,ii,5.4 ,ii ,col=rgb(1,0,0,0.5)) }
-    for(ii in 1:length(mtmp[[2]])) polygon(c(5.5,5.5,10,10),c(ii,ii+1,ii+1,ii),border = NA,col=prettycolors[newclass2][variables[,k]][ordtmp][ii])
-    legend("left", legend=paste("Cluster ",unique(clusters[[i]]$consensusClass),sep="") , fill =clusters[[i]]$clrs[[3]][newclass1],bty = 'n',border=NA)
-    legend("right", legend=levels(variables[,k]) , fill =prettycolors[newclass2],bty = 'n',border=NA)
+    for(ii in 1:length(mtmp[[2]])) polygon(c(5.5,5.5,10,10),c(ii,ii+1,ii+1,ii),border = NA,col=prettycolors[newclass2][grs][ordtmp][ii])
+    legend("left", legend=paste("Cluster ",unique(cctmp),sep="") , fill =clusters[[i]]$clrs[[3]][newclass1],bty = 'n',border=NA)
+    legend("right", legend=levels(grs) , fill =prettycolors[newclass2],bty = 'n',border=NA)
     legend("bottom", legend="Mismatch" , lty=1,lwd=2,col=rgb(1,0,0,0.5),bty = 'n',border=NA)
     
     #test
-    rmatch = sapply(1:1000, function(j){match2(sample(clusters[[i]]$consensusClass),variables[,k] )[[1]] }  )
+    rmatch = sapply(1:1000, function(j){match2(sample(cctmp),grs )[[1]] }  )
   }else{
     #clustering
     grsvals = variables[,k]
