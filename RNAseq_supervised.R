@@ -41,7 +41,6 @@ DESeqDataSetFromHTSeqCount2 <- function( sampleTable, directory=".", design, ign
 
 # load libraries
 library(DESeq2)
-#library(fpc)
 
 # define some nice colors
 prettycolors = c(1,2,rgb(0,152/255,219/255),rgb(233/255,131/255,0),rgb(0,155/255,118/255),rgb(0.5,0.5,0.5))
@@ -74,7 +73,7 @@ dds = DESeq(ddsHTSeq,parallel = para)
 
 require(gtools)
 rna = resultsNames(dds)[-1]
-per = combinations(3,2,rna)
+per = combinations(nrow(per),2,rna)
 res = vector("list",nrow(per))
 if(opt$IHW){
   library("IHW")
