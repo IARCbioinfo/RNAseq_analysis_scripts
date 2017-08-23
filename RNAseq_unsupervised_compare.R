@@ -28,7 +28,7 @@ contcol      = function(x){
   xx = x
   xx[is.na(x)] = 0
   xnorm = (xx-min(xx,na.rm=T))/(max(xx,na.rm=T)-min(xx,na.rm=T))
-  return( rgb(1,1-xnorm/1.2,1-xnorm/1.2) )
+  return( rgb(1,0.9-xnorm/1.2,0.9-xnorm/1.2) )
 }
 
 # define useful functions
@@ -140,8 +140,8 @@ for(i in minK:maxK){
     #clustering
     grsvals = variables[,k]
     grsvals2= grsvals[!is.na(grsvals)] 
-    grs = cut( grsvals2 ,seq(min(grsvals2),max(grsvals2,na.rm=T),length.out=i+1) ,include.lowest = T)
     cuts = seq( min(grsvals2),max(grsvals2,na.rm=T),length.out = i+1)
+    grs = cut( grsvals2 ,cuts ,include.lowest = T)
     meds = cuts[1:i] + (cuts[2]-cuts[1])/2
     idmeds = sapply(meds, function(x) which.min(abs(x-grsvals2) )) 
     cctmp   = clusters[[i]]$consensusClass[!is.na(grsvals)]
