@@ -82,7 +82,9 @@ for(i in 1:length(Vnames)){
 }
 if(opt$IHW){
   library("IHW")
-  for(i in 1:length(res)) res[[i]] <- results(dds,parallel = para, alpha=opt$FDR,filterFun = ihw, contrast = list(per[i,1],per[i,2]) )
+  for(i in 1:length(res)){
+    for(j in 1:length(res[[i]])) res[[i]][[j]] <- results(dds,parallel = para, alpha=opt$FDR,filterFun = ihw, contrast = c(Vnames[i],per[[i]][j,1],per[[i]][j,2]) )
+  }
 }else{
   for(i in 1:length(res)){
     for(j in 1:length(res[[i]])) res[[i]][[j]] <- results(dds,parallel = para, alpha=opt$FDR, contrast = c(Vnames[i],per[[i]][j,1],per[[i]][j,2]) )
