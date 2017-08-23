@@ -128,7 +128,7 @@ for(i in minK:maxK){
     #layout(m)
     plot(-10,-10,xlim=c(-6,16),ylim=c(-length(mtmp[[2]])/10,length(mtmp[[2]])),axes=F,xlab="",ylab="",main=paste("Matching Clusters/",varnames[k],sep="") )
     for(ii in 1:length(mtmp[[2]])) polygon(c(0,0,4.5,4.5),c(ii,ii+1,ii+1,ii),border = NA,col=clusters[[i]]$clrs[[3]][newclass1][cctmp][ordtmp][ii])
-    for(ii in 1:length(mtmp[[2]])){if((clusters[[i]]$clrs[[3]][mtmp[[2]]][ordtmp][ii])!=(clusters[[i]]$clrs[[3]][mtmp[[3]]][ordtmp][ii]))  segments(4.6,ii,5.4 ,ii ,col=rgb(1,0,0,0.5)) }
+    for(ii in 1:length(mtmp[[2]])){if((clusters[[i]]$clrs[[3]][mtmp[[2]]][ordtmp][ii])!=(clusters[[i]]$clrs[[3]][mtmp[[3]]][ordtmp][ii]))  segments(4.6,ii+0.5,5.4 ,ii+0.5 ,col=rgb(1,0,0,0.5)) }
     for(ii in 1:length(mtmp[[2]])) polygon(c(5.5,5.5,10,10),c(ii,ii+1,ii+1,ii),border = NA,col=prettycolors[newclass2][grs][ordtmp][ii])
     legend("left", legend=paste("Cluster ",unique(cctmp),sep="") , fill =clusters[[i]]$clrs[[3]][newclass1],bty = 'n',border=NA)
     legend("right", legend=levels(grs) , fill =prettycolors[newclass2],bty = 'n',border=NA)
@@ -158,10 +158,10 @@ for(i in minK:maxK){
     #layout(m)
     plot(-10,-10,xlim=c(-6,16),ylim=c(-20,length(mtmp[[2]])),axes=F,xlab="",ylab="",main=paste("Matching Clusters/",varnames[k],sep="") )
     for(ii in 1:length(mtmp[[2]])) polygon(c(0,0,4.5,4.5),c(ii,ii+1,ii+1,ii),border = NA,col=clusters[[i]]$clrs[[3]][cctmp][ordtmp][ii])
-    for(ii in 1:length(mtmp[[2]])){if((clusters[[i]]$clrs[[3]][mtmp[[2]]][ordtmp][ii])!=(clusters[[i]]$clrs[[3]][mtmp[[3]]][ordtmp][ii]))  segments(4.6,ii,5.4 ,ii ,col=rgb(1,0,0,0.5)) }
+    for(ii in 1:length(mtmp[[2]])){if((clusters[[i]]$clrs[[3]][mtmp[[2]]][ordtmp][ii])!=(clusters[[i]]$clrs[[3]][mtmp[[3]]][ordtmp][ii]))  segments(4.6,ii+0.5,5.4 ,ii+0.5 ,col=rgb(1,0,0,0.5)) }
     for(ii in 1:length(mtmp[[2]])) polygon(c(5.5,5.5,10,10),c(ii,ii+1,ii+1,ii),border = NA,col=contcol(meds)[grs][ordtmp][ii])
     legend("bottomleft", legend=paste("Cluster ",unique(cctmp),sep="") , fill =clusters[[i]]$clrs[[3]])
-    legend("bottomright", legend=unique(grs) , fill =contcol(meds))
+    legend("bottomright", legend=levels(grs) , fill =contcol(meds))
     legend("bottom", legend="Mismatch" , lty=1,lwd=2,col=rgb(1,0,0,0.5))
     
     rmatch = sapply(1:1000, function(j){match2(sample(cctmp),grs )[[1]] }  )
