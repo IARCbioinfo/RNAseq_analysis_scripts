@@ -249,18 +249,33 @@ Vnames = colnames(groups)
 res = vector("list",length(Vnames))
 per = vector("list",length(Vnames))
 for(i in 1:length(Vnames)){
-  rna = levels(groups[,i])
-  per[[i]] = combinations(length(rna),2,rna)
-  res[[i]] = vector("list",nrow(per[[i]]))
+  grtmp = groups[apply(!is.na(groups),1,prod)>0,i]
+  if(class(grtmp)=="factor"){
+    rna = levels(groups[apply(!is.na(groups),1,prod)>0,i])
+    per[[i]] = combinations(length(rna),2,rna)
+    res[[i]] = vector("list",nrow(per[[i]]))
+  }else{
+    rna = matrix(c(1,0),ncol=2)
+    per[[i]] = rna
+    res[[i]] = vector("list",1)
+  }
 }
 if(opt$IHW){
   library("IHW")
   for(i in 1:length(res)){
-    for(j in 1:length(res[[i]])) res[[i]][[j]] <- results(dds,parallel = para, alpha=opt$FDR,filterFun = ihw, contrast = c(Vnames[i],per[[i]][j,1],per[[i]][j,2]) )
+    if(class(groups[,i])=="factor"){
+      for(j in 1:length(res[[i]])) res[[i]][[j]] <- results(dds,parallel = para, alpha=opt$FDR,filterFun = ihw, contrast = c(Vnames[i],per[[i]][j,1],per[[i]][j,2]) )
+    }else{
+      res[[i]][[1]] <- results(dds,parallel = para, alpha=opt$FDR, contrast = list(Vnames[i]) )
+    }
   }
 }else{
   for(i in 1:length(res)){
-    for(j in 1:length(res[[i]])) res[[i]][[j]] <- results(dds,parallel = para, alpha=opt$FDR, contrast = c(Vnames[i],per[[i]][j,1],per[[i]][j,2]) )
+    if(class(groups[,i])=="factor"){
+      for(j in 1:length(res[[i]])) res[[i]][[j]] <- results(dds,parallel = para, alpha=opt$FDR, contrast = c(Vnames[i],per[[i]][j,1],per[[i]][j,2]) )
+    }else{
+      res[[i]][[1]] <- results(dds,parallel = para, alpha=opt$FDR, contrast = list(Vnames[i]) )
+    }
   }
 }
 
@@ -279,10 +294,12 @@ for(i in 1:length(res)){
 }
 
 for(i in 1:length(res)){
-  pdf(paste("Counts_smallestpval_",Vnames[i],".pdf",sep=""),h=3.5,w=3.5*length(res[[i]]))
-  par(mfrow=c(1,length(res[[i]])),family="Times")
-  for(j in 1:length(res[[i]])) plotCounts(dds, gene=which.min(res[[i]][[j]]$padj), intgroup=Vnames[i],main=paste(per[[i]][j,1],"vs",per[[i]][j,2]) )
-  dev.off()
+  if(class(groups[,i])=="factor"){
+      pdf(paste("Counts_smallestpval_",Vnames[i],".pdf",sep=""),h=3.5,w=3.5*length(res[[i]]))
+    par(mfrow=c(1,length(res[[i]])),family="Times")
+    for(j in 1:length(res[[i]])) plotCounts(dds, gene=which.min(res[[i]][[j]]$padj), intgroup=Vnames[i],main=paste(rownames(res[[i]][[j]][which.min(res[[i]][[j]]$padj),]),",",per[[i]][j,1],"vs",per[[i]][j,2]) )
+    dev.off()
+  }
 }
 
 # save top gene loadings
