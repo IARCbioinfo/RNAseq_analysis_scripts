@@ -12,6 +12,7 @@ option_list = list(
   make_option(c("-i", "--input"), type="character", default=".", help="input file with groups [default= %default]", metavar="character"),
   make_option(c("-m", "--Kmin"), type="numeric", default=2, help="minimum number of clusters [default= %default]", metavar="numeric"),
   make_option(c("-M", "--Kmax"), type="numeric", default=5, help="maximum number of clusters [default= %default]", metavar="numeric"),
+  make_option(c("-n", "--n"), type="numeric", default=5, help="number of permutations [default= %default]", metavar="numeric"),
   make_option(c("-o", "--out"), type="character", default="out", help="output directory name [default= %default]", metavar="character")
 ); 
 
@@ -135,7 +136,7 @@ for(i in minK:maxK){
     legend("bottom", legend="Mismatch" , lty=1,lwd=2,col=rgb(1,0,0,0.5),bty = 'n',border=NA)
     
     #test
-    rmatch = sapply(1:1000, function(j){match2(sample(cctmp),grs )[[1]] }  )
+    rmatch = sapply(1:opt$n, function(j){match2(sample(cctmp),grs )[[1]] }  )
   }else{
     #clustering
     grsvals = variables[,k]
@@ -164,7 +165,7 @@ for(i in minK:maxK){
     legend("bottomright", legend=levels(grs) , fill =contcol(meds))
     legend("bottom", legend="Mismatch" , lty=1,lwd=2,col=rgb(1,0,0,0.5))
     
-    rmatch = sapply(1:1000, function(j){match2(sample(cctmp),grs )[[1]] }  )
+    rmatch = sapply(1:opt$n, function(j){match2(sample(cctmp),grs )[[1]] }  )
   }
   pm     = mean( rmatch> mtmp[[1]] )
   plotmatch(mtmp,rmatch,paste("Pr of best matching Cluster/",varnames[k],sep=""),pm,n=nrow(pca$li),off=15)
