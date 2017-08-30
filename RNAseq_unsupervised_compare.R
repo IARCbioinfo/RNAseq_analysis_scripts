@@ -167,8 +167,8 @@ for(i in minK:maxK){
     
     rmatch = sapply(1:opt$n, function(j){match2(sample(cctmp),grs )[[1]] }  )
   }
-  pm     = mean( rmatch> mtmp[[1]] )
-  plotmatch(mtmp,rmatch,paste("Pr of best matching Cluster/",varnames[k],sep=""),pm,n=nrow(pca$li),off=15)
+  pm     = mean( rmatch>= mtmp[[1]] )
+  plotmatch(mtmp,rmatch,paste("Pr of best matching Cluster/",varnames[k],sep=""),pm,n=length(cctmp),off=15)
 }
 
 dev.off()
