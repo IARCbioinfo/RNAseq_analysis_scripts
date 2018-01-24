@@ -15,7 +15,10 @@ option_list = list(
   make_option(c("-s", "--nsub"), type="numeric", default=1000, help="the number of genes to subsample for vst [default= %default]", metavar="number"),
   make_option(c("-t", "--transform"), type="character", default="auto", help="count transformation method; 'rld', 'vst', or 'auto' [default= %default]", metavar="character"),
   make_option(c("-c", "--clusteralg"), type="character", default="hc", help="clustering algorithm to be passed to ConsensusClusterPlus; 'km' (k-means on data matrix), 'kmdist' (k-means on distances), 'hc' (hierarchical clustering), 'pam' (paritioning around medoids) [default= %default]", metavar="character"),
-  make_option(c("-l", "--linkage"), type="character", default="complete", help="method for hierarchical clustering to be passed to ConsensusClusterPlus; 'ward.D', 'ward.D2', 'single', 'complete', 'average', 'mcquitty', 'median', or 'centroid' [default= %default]", metavar="character")
+  make_option(c("-l", "--linkage"), type="character", default="complete", help="method for hierarchical clustering to be passed to ConsensusClusterPlus; 'ward.D', 'ward.D2', 'single', 'complete', 'average', 'mcquitty', 'median', or 'centroid' [default= %default]", metavar="character"),
+  make_option(c("-r", "--rRNA"), type="logical", default=FALSE, help="Keep rRNA [default= %default]", metavar="logical"),
+  make_option(c("-P", "--tperp"), type="numeric", default=5, help="Perplexity parameter for the t-SNE method [default= %default]", metavar="numeric"),
+  make_option(c("-I", "--titer"), type="numeric", default=1000, help="Maximum number of iterations for the t-SNE method [default= %default]", metavar="numeric")
 ); 
 
 opt_parser = OptionParser(option_list=option_list);
@@ -28,12 +31,12 @@ library(DESeq2)
 library(fpc)
 library(cluster)
 
+
 # define some nice colors
 prettycolors = c(1,2,rgb(0,152/255,219/255),rgb(233/255,131/255,0),rgb(0,155/255,118/255),rgb(0.5,0.5,0.5),rgb(0,124/255,146/255),rgb(178/255,111/255,22/255),rgb(234/255,171/255,0),rgb(83/255,40/255,79/255))
 
 ### custom htseqcount read for compatibility with htseq 0.8 
-DESeqDataSetFromHTSeqCount2 <- function( sampleTable, directory=".", design, ignoreRank=FALSE, ...) 
-{
+DESeqDataSetFromHTSeqCount2 <- function( sampleTable, directory=".", design, ignoreRank=FALSE, ...){
   if (missing(design)) stop("design is missing")
   l <- lapply( as.character( sampleTable[,2] ), function(fn) read.table( file.path( directory, fn ), fill=T ) )
   if( ! all( sapply( l, function(a) all( a$V1 == l[[1]]$V1 ) ) ) )
@@ -55,10 +58,12 @@ DESeqDataSetFromHTSeqCount2 <- function( sampleTable, directory=".", design, ign
 directory <- opt$folder
 n = opt$nbgenes
 outdir    <- opt$out
+rem.rRNA = !as.logical(opt$rRNA)
 dir.create(outdir, showWarnings = FALSE)
 sampleFiles  <- grep(opt$pattern,list.files(directory),value=TRUE) # find names
 sampleTable <- data.frame(sampleName = sampleFiles ,fileName = sampleFiles) # table for DESeq
 ddsHTSeq <- DESeqDataSetFromHTSeqCount2(sampleTable = sampleTable,directory = directory, design= ~ 1)
+if(rem.rRNA) ddsHTSeq <- ddsHTSeq[-grep("RNA5S|5S_|rRNA|5-8S|8S5|8S_|MT-R", rownames(ddsHTSeq),perl=T),]
 ddsHTSeq <- ddsHTSeq[ rowSums(counts(ddsHTSeq)) > 1, ] # filter out rows with no counts
 setwd(outdir)
 dir.create("PCA", showWarnings = FALSE)
@@ -142,9 +147,17 @@ dev.off()
 # save top gene loadings
 write.csv(genes,file="PCA/Genes_PC1.csv")
 
+# t-SNE 
+d = assay(di)
+#
+require(Rtsne)
+dtsne = sweep(d,1, apply(d,1,median,na.rm=T))
+t.perp = as.numeric(opt$tperp)
+t.iter = as.numeric(opt$titer)
+tsne <- Rtsne(t(dtsne), dims = 2, perplexity=t.perp, verbose=TRUE, max_iter = t.iter,check_duplicates = F,theta = 0)
+
 # clustering
 # select genes with largest variation across samples
-d = assay(di)
 mads=apply(d,1,mad)
 d=d[rev(order(mads))[1:n],] 
 d = sweep(d,1, apply(d,1,median,na.rm=T))
@@ -195,11 +208,18 @@ co[which.max(corl)]=2
 barplot(corl,names.arg = paste("K =",2:maxK) ,las=2,ylab="Mean cophenetic distance",col= co)
 dev.off()
 
+
 # plot PCA with clusters
 pdf(paste("PCA/PCA_",opt$clusteralg,"_",opt$linkage,".pdf",sep=""),h=3,w=3*(maxK-1))
 par(mfrow=c(1,(maxK-1)),family="Times")
 for(i in 2:(maxK)) s.class(pca$li,as.factor(clusters[[i]]$consensusClass),col=prettycolors,xax = 1,yax=2,addaxes = T,sub= paste("ConsensusClusterPlus", paste(paste("PC",1:2,": ",format(pca$eig[1:2]/sum(pca$eig)*100,digits=2),"%",sep=""),collapse = ", ")) )
 dev.off()
 
+# plot t-SNE with clusters
+pdf(paste("PCA/tSNE_",opt$clusteralg,"_",opt$linkage,".pdf",sep=""),h=3,w=3*(maxK-1))
+par(mfrow=c(1,(maxK-1)),family="Times")
+for(i in 2:(maxK)) s.class(tsne$Y,as.factor(clusters[[i]]$consensusClass),col=prettycolors,xax = 1,yax=2,addaxes = T,sub= paste("ConsensusClusterPlus", paste(paste("PC",1:2,": ",format(pca$eig[1:2]/sum(pca$eig)*100,digits=2),"%",sep=""),collapse = ", ")) )
+dev.off()
+
 # save results
-save(di,pca,clusters,icl, file = paste("RNAseq_unsupervised_",opt$clusteralg,"_",opt$linkage,".RData",sep="") )
+save(di,pca,tsne,clusters,icl, file = paste("RNAseq_unsupervised_",opt$clusteralg,"_",opt$linkage,".RData",sep="") )
