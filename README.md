@@ -93,7 +93,7 @@ For each column (i.e., variable) of the input table, a .pdf file with *K* rows, 
 
 ## Supervised analysis: *RNAseq_supervised.R*
 
-This script performs supervised analyses (Differential Expression Analysis) from htseq-count outputs. 
+This script performs supervised analyses (Differential Expression Analysis) at the gene level from htseq-count outputs. 
 
 ## Prerequisites
 This R script requires the following package:
@@ -135,3 +135,43 @@ The script performs DE analysis of gene count data under a Poisson glm with pack
 - plots of normalized counts of the most significant DE gene, as a function of the group, for each pair of group levels
 - .csv files with gene names, fold changes, and p-values, for each combination of 2 groups
 - a .RData file with 1 object: the deseq2 results table
+
+## Supervised analysis: *RNAseq_supervised_transcript.R*
+
+This script performs supervised analyses (Differential Expression Analysis) at the transcript level from StringTie outputs. 
+
+## Prerequisites
+This R script requires the following package:
+- ballgown
+- genefilter
+- dplyr
+
+### Usage
+```bash
+Rscript RNAseq_supervised_transcript.R [options]
+```
+
+| **PARAMETER** | **DEFAULT** | **DESCRIPTION** |
+|-----------|--------------:|-------------| 
+*-f* | . | folder with folders of sample input files |
+*-g* | . | file with sample groups |
+*-o* | out | output directory name |
+*-p* |  . | pattern for input folder names |
+*-t* | 1 | Threshold variance in gene expression (FPKM) |
+*-r* |  | Row names for group file|
+*-c* | 2 | Column index of covariable to use for regression; other columns are treated as adjustment variables |
+*-h*    |  | Show help message and exit|
+
+
+For example, one can type
+```bash
+Rscript RNAseq_supervised_transcript.R -f input -g groups.txt -o output/
+```
+
+### Details
+The script performs DE analysis of transcript FPKM data under a hierarchical linear model with package *ballgown*, optionally correcting for additional variables. 
+
+### Output
+- plots of expression levels for each gene with DE transcripts
+- a .csv file with gene names, IDs, p-values, and q-values
+- a .RData file with 1 object: the ballgown object
