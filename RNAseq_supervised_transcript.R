@@ -24,13 +24,8 @@ opt = parse_args(opt_parser);
 
 # load libraries
 library(ballgown)
-library(devtools)
-library(RSkittleBrewer) 
 library(genefilter)
 library(dplyr)
-
-# define some nice colors
-prettycolors = c(1,2,rgb(0,152/255,219/255),rgb(233/255,131/255,0),rgb(0,155/255,118/255),rgb(0.5,0.5,0.5))
 
 ## load group file
 print( opt$row.names )
@@ -51,13 +46,6 @@ if(!is.null(opt$row.names)) print( mean(rownames(groups)==rownames(sampleTable))
 bg_data_filt = subset(bg_data,"rowVars(texpr(bg_data))>1",genomesubset=TRUE)
 print(bg_data_filt)
 
-#ddsHTSeq2 <- ddsHTSeq[,apply(!is.na(groups),1,prod)>0]
-#if(sum( apply(!is.na(groups),1,prod)==0 )>0){
-#  print(paste(sum( apply(!is.na(groups),1,prod)==0 ),"samples with missing data removed:") )
-#  print(sampleFiles[apply(!is.na(groups),1,prod)==0])
-#}
-#print(ddsHTSeq2)
-
 outdir    <- opt$out
 dir.create(outdir, showWarnings = FALSE)
 setwd(outdir)
@@ -74,12 +62,9 @@ print("done saving DEG")
 signif = subset(results_transcripts,results_transcripts$qval<0.05)
 
 # plot
-tropical= c('darkorange','dodgerblue','hotpink','limegreen','yellow')
-palette(tropical)
 fpkm = texpr(bg_data,meas="FPKM")
 fpkm = log2(fpkm+1)
 #boxplot(fpkm,col=as.numeric(groups[,covar]),las=2,ylab='log2(FPKM+1)')
-
 #plotTranscripts(ballgown::geneIDs(bg_data)[1729], bg_data, main=c('Gene XIST in sample ERR188234'), sample=c('ERR188234'))
 
 for(i in 1:nrow(signif)){
