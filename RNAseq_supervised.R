@@ -21,10 +21,13 @@ option_list = list(
   make_option(c("-m", "--IHW"), type="logical", default=FALSE, help="Use Independent Hypothesis Weighting for multiple-testing procedure [default= %default]", metavar="logical")
 ); 
 
+
+
 ## add something to specify class of group file columns
 
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
+
 
 ### custom htseqcount read for compatibility with htseq 0.8 
 DESeqDataSetFromHTSeqCount2 <- function( sampleTable, directory=".", design, ignoreRank=FALSE, ...){
@@ -175,6 +178,8 @@ for(i in 1:length(resOrdered)){
 print("done saving DEG")
 
 # save results
+write.table(rbind(names(opt),unlist(opt)),"options.txt",col.names=F,row.names=F,quote=F)
 save(dds,resOrdered, file = "RNAseq_supervised.RData")
+
 print("done saving results")
 

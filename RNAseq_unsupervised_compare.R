@@ -175,4 +175,5 @@ for(i in minK:maxK){
 dev.off()
 }
 
-
+# save options
+write.table(rbind(names(opt),unlist(opt)),"options.txt",col.names=F,row.names=F,quote=F)

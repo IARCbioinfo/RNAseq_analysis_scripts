@@ -77,6 +77,7 @@ for(i in 1:nrow(signif)){
 print("done plotting")
 
 # save results
+write.table(rbind(names(opt),unlist(opt)),"options.txt",col.names=F,row.names=F,quote=F)
 save(bg_data, file = "RNAseq_supervised_transcript.RData")
 print("done saving results")
 

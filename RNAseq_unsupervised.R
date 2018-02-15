@@ -222,4 +222,5 @@ for(i in 2:(maxK)) s.class(tsne$Y,as.factor(clusters[[i]]$consensusClass),col=pr
 dev.off()
 
 # save results
+write.table(rbind(names(opt),unlist(opt)),"options.txt",col.names=F,row.names=F,quote=F)
 save(di,pca,tsne,clusters,icl, file = paste("RNAseq_unsupervised_",opt$clusteralg,"_",opt$linkage,".RData",sep="") )
