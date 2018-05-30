@@ -14,6 +14,7 @@ option_list = list(
   make_option(c("-p", "--pattern"), type="character", default="count.txt", help="pattern for count file names [default= %default]", metavar="character"),
   make_option(c("-t", "--thres"), type="numeric", default=1, help="Threshold variance in gene expression (FPKM) [default= %default]", metavar="numeric"),
   make_option(c("-r", "--row.names"), type="character", default=NULL, help="Row names for group file (passed to read.table) [default= %default]", metavar="character"),
+  make_option(c("-i", "--print"), type="numeric", default=NULL, help="Number of DET to print [default= %default]", metavar="character"),
   make_option(c("-c", "--covar"), type="numeric", default=2, help="Column index of covariable to use for regression; other columns are treated as adjustment variables [default= %default]", metavar="character")
 ); 
 
@@ -62,22 +63,24 @@ print("done saving DEG")
 signif = subset(results_transcripts,results_transcripts$qval<0.05)
 
 # plot
-fpkm = texpr(bg_data,meas="FPKM")
-fpkm = log2(fpkm+1)
+#fpkm = texpr(bg_data,meas="FPKM")
+#fpkm = log2(fpkm+1)
 #boxplot(fpkm,col=as.numeric(groups[,covar]),las=2,ylab='log2(FPKM+1)')
 #plotTranscripts(ballgown::geneIDs(bg_data)[1729], bg_data, main=c('Gene XIST in sample ERR188234'), sample=c('ERR188234'))
 
-for(i in 1:nrow(signif)){
-  pdf(paste("Transcript_DE_",signif$geneNames[i],"_",signif$geneIDs[i],".pdf",sep=""),h=3.5*floor(sqrt(length(unique(groups[,covar])))),w=3.5*ceiling(sqrt(length(unique(groups[,covar])))) )
-  par(family="Times",las=1)
-  plotMeans(as.character(signif$geneIDs[i]), bg_data, groupvar=colnames(groups)[covar], meas='FPKM', colorby='transcript',labelTranscripts = TRUE)
-  dev.off()
+if(!is.null(opt$print)){
+  for(i in 1:min(c(as.numeric(opt$print),nrow(signif)))){
+    pdf(paste("Transcript_DE_",signif$geneNames[i],"_",signif$geneIDs[i],".pdf",sep=""),h=3.5*floor(sqrt(length(unique(groups[,covar])))),w=3.5*ceiling(sqrt(length(unique(groups[,covar])))) )
+    par(family="Times",las=1)
+    plotMeans(as.character(signif$geneIDs[i]), bg_data, groupvar=colnames(groups)[covar], meas='FPKM', colorby='transcript',labelTranscripts = TRUE)
+    dev.off()
+  }
 }
 
 print("done plotting")
 
 # save results
-write.table(rbind(names(opt),unlist(opt)),"options.txt",col.names=F,row.names=F,quote=F)
-save(bg_data, file = "RNAseq_supervised_transcript.RData")
+save(bg_data, bg_data_filt, results_transcripts , signif ,file = "RNAseq_supervised_transcript.RData")
 print("done saving results")
+write.table(rbind(names(opt),unlist(opt)),"options.txt",col.names=F,row.names=F,quote=F)
 
