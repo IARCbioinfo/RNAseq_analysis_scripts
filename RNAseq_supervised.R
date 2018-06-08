@@ -4,8 +4,11 @@
 ### Script to perform Clustering of RNA seq data ###
 ####################################################
 
-# get options
 library("optparse")
+library(DESeq2)
+require(gtools)
+
+# get options
 
 option_list = list(
   make_option(c("-f", "--folder"), type="character", default=".", help="folder with count files [default= %default]", metavar="character"),
@@ -54,15 +57,19 @@ DESeqDataSetFromHTSeqCount2 <- function( sampleTable, directory=".", design, ign
   return(object)
 }   
 
-# load libraries
-library(DESeq2)
 
 # define some nice colors
 prettycolors = c(1,2,rgb(0,152/255,219/255),rgb(233/255,131/255,0),rgb(0,155/255,118/255),rgb(0.5,0.5,0.5))
 
 ## load group file
+if(opt$row.names=="NULL"){
+  opt$row.names=NULL
+}else{
+  opt$row.names=as.numeric(opt$row.names)
+}
 print( opt$row.names )
-groups = read.table(opt$group_file,h=T,row.names = as.numeric(opt$row.names))
+print(opt$group_file)
+groups = read.table(opt$group_file,h=T,row.names = opt$row.names,sep=" ")
 print(groups)
 
 ## build count table from count files
@@ -70,12 +77,20 @@ directory <- opt$folder
 outdir    <- opt$out
 dir.create(outdir, showWarnings = FALSE)
 sampleFiles <- grep(opt$pattern,list.files(directory),value=TRUE) # find names
-sampleTable <- data.frame(sampleName = paste( "sample", 1:length(sampleFiles),sep = "") ,fileName = sampleFiles, groups) # table for DESeq
+sampleTable <- data.frame(sampleName = gsub(".txt","", sampleFiles) ,fileName = sampleFiles, groups) # table for DESeq
 head(sampleTable)
 
 if(!is.null(opt$row.names)) print( mean(rownames(groups)==rownames(sampleTable)) )
 
-ddsHTSeq  <- DESeqDataSetFromHTSeqCount2(sampleTable = sampleTable,directory = directory, design= as.formula( paste('~',paste(colnames(groups),collapse = " + ")  ) ) )
+print( as.formula( paste('~',paste(colnames(groups),collapse = " + ")  ) ) )
+
+if(sum( apply(!is.na(groups),1,prod)==0 )>0){
+  print(paste(sum( apply(!is.na(groups),1,prod)==0 ),"samples with missing data removed:") )
+  print(sampleFiles[apply(!is.na(groups),1,prod)==0])
+}
+IDs = apply(!is.na(groups),1,prod)>0
+ddsHTSeq  <- DESeqDataSetFromHTSeqCount2(sampleTable = sampleTable[IDs,],directory = directory, design= as.formula( paste('~',paste(colnames(groups),collapse = " + ")  ) ) )
+groups = subset.data.frame(groups,IDs)
 
 if(!is.null(opt$genespans_file) ){
   genespans = read.table(opt$genespans_file)
@@ -88,15 +103,11 @@ if(!is.null(opt$genespans_file) ){
   fpkmdds = fpkm(ddsHTSeq)
   ddsHTSeq  <- ddsHTSeq[ rowSums(fpkmdds>opt$thres)>=2, ] # alternative filterinf based on fpm : keep if at least 2 samples with fpm > 1
 }else{
-  ddsHTSeq  <- ddsHTSeq[ rowSums(fpm(ddsHTSeq)>opt$thres)>=2, ] # alternative filterinf based on fpm : keep if at least 2 samples with fpm > 1
+  ddsHTSeq  <- ddsHTSeq[ rowSums(counts(ddsHTSeq)>opt$thres)>=2, ] # alternative filterinf based on fpm : keep if at least 2 samples with fpm > 1
   print(ddsHTSeq)
 }
-ddsHTSeq2 <- ddsHTSeq[,apply(!is.na(groups),1,prod)>0]
-if(sum( apply(!is.na(groups),1,prod)==0 )>0){
-  print(paste(sum( apply(!is.na(groups),1,prod)==0 ),"samples with missing data removed:") )
-  print(sampleFiles[apply(!is.na(groups),1,prod)==0])
-}
-print(ddsHTSeq2)
+#ddsHTSeq2 <- ddsHTSeq[,apply(!is.na(groups),1,prod)>0]
+print(ddsHTSeq)
 #ddsHTSeq <- ddsHTSeq[ rowSums(counts(ddsHTSeq)) > 1, ] # filter out rows with no counts
 setwd(outdir)
 #dir.create("other", showWarnings = FALSE)
@@ -110,16 +121,15 @@ if(opt$cores>1){
   register(MulticoreParam(opt$cores))
   para = TRUE
 }
-dds = DESeq(ddsHTSeq2,parallel = para) 
+dds = DESeq(ddsHTSeq,parallel = para) 
 
-require(gtools)
 Vnames = colnames(groups)
 res = vector("list",length(Vnames))
 per = vector("list",length(Vnames))
 for(i in 1:length(Vnames)){
-  grtmp = groups[apply(!is.na(groups),1,prod)>0,i]
+  grtmp = groups[,i]
   if(class(grtmp)=="factor"){
-    rna = levels(groups[apply(!is.na(groups),1,prod)>0,i])
+    rna = levels(groups[,i])
     per[[i]] = combinations(length(rna),2,rna)
     res[[i]] = vector("list",nrow(per[[i]]))
   }else{
@@ -140,7 +150,8 @@ if(opt$IHW){
 }else{
   for(i in 1:length(res)){
     if(class(groups[,i])=="factor"){
-      for(j in 1:length(res[[i]])) res[[i]][[j]] <- results(dds,parallel = para, alpha=opt$FDR, contrast = c(Vnames[i],per[[i]][j,1],per[[i]][j,2]) , lfcThreshold = opt$theta, altHypothesis = "greaterAbs" )
+      for(j in 1:length(res[[i]])) res[[i]][[j]] <- results(dds,parallel = para, alpha=opt$FDR, contrast = c(Vnames[i],per[[i]][j,1],per[[i]][j,2]) , lfcThreshold = opt$theta, 
+                                                            altHypothesis = "greaterAbs" )
     }else{
       res[[i]][[1]] <- results(dds,parallel = para, alpha=opt$FDR, contrast = list(Vnames[i]) , lfcThreshold = opt$theta, altHypothesis = "greaterAbs" )
     }
@@ -179,7 +190,7 @@ print("done saving DEG")
 
 # save results
 write.table(rbind(names(opt),unlist(opt)),"options.txt",col.names=F,row.names=F,quote=F)
-save(dds,resOrdered, file = "RNAseq_supervised.RData")
+save(dds,res,resOrdered, file = "RNAseq_supervised.RData")
 
 print("done saving results")
 
