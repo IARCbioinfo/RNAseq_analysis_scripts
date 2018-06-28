@@ -21,6 +21,7 @@ option_list = list(
   make_option(c("-t", "--thres"), type="numeric", default=1, help="Threshold gene expression (FPM or FPKM) [default= %default]", metavar="numeric"),
   make_option(c("-T", "--theta"), type="numeric", default=0, help="Threshold LFC to test [default= %default]", metavar="numeric"),
   make_option(c("-r", "--row.names"), type="character", default=NULL, help="Row names for group file (passed to read.table) [default= %default]", metavar="character"),
+  make_option(c("-i", "--maxit"), type="numeric", default=100, help="Number of iterations for DESeq algorithm (passed to DESeq) [default= %default]", metavar="numeric"),
   make_option(c("-m", "--IHW"), type="logical", default=FALSE, help="Use Independent Hypothesis Weighting for multiple-testing procedure [default= %default]", metavar="logical")
 ); 
 
@@ -121,7 +122,7 @@ if(opt$cores>1){
   register(MulticoreParam(opt$cores))
   para = TRUE
 }
-dds = DESeq(ddsHTSeq,parallel = para) 
+dds = DESeq(ddsHTSeq,parallel = para, maxit=as.numeric(opt$maxit) ) 
 
 Vnames = colnames(groups)
 res = vector("list",length(Vnames))
