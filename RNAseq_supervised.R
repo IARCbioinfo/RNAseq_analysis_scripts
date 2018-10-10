@@ -5,9 +5,6 @@
 ####################################################
 
 library("optparse")
-library(DESeq2)
-require(gtools)
-
 # get options
 
 option_list = list(
@@ -32,6 +29,8 @@ option_list = list(
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
 
+library(DESeq2)
+require(gtools)
 
 ### custom htseqcount read for compatibility with htseq 0.8 
 DESeqDataSetFromHTSeqCount2 <- function( sampleTable, directory=".", design, ignoreRank=FALSE, ...){
@@ -104,7 +103,7 @@ if(!is.null(opt$genespans_file) ){
   fpkmdds = fpkm(ddsHTSeq)
   ddsHTSeq  <- ddsHTSeq[ rowSums(fpkmdds>opt$thres)>=2, ] # alternative filterinf based on fpm : keep if at least 2 samples with fpm > 1
 }else{
-  ddsHTSeq  <- ddsHTSeq[ rowSums(counts(ddsHTSeq)>opt$thres)>=2, ] # alternative filterinf based on fpm : keep if at least 2 samples with fpm > 1
+  ddsHTSeq  <- ddsHTSeq[ rowSums(fpm(ddsHTSeq)>opt$thres)>=2, ] # alternative filterinf based on fpm : keep if at least 2 samples with fpm > thres
   print(ddsHTSeq)
 }
 #ddsHTSeq2 <- ddsHTSeq[,apply(!is.na(groups),1,prod)>0]
@@ -183,9 +182,16 @@ for(i in 1:length(res)){
 }
 print("done plotting")
 
+# find genes where algo did not converge
+DEGres = mcols(dds)
+noconvl = as.character(DEGres[which( !DEGres$betaConv ),2])
+
 # save DEG
 for(i in 1:length(resOrdered)){
-  for(j in 1:length(resOrdered[[i]])) write.csv(resOrdered[[i]][[j]],file=paste("Genes_DE_",Vnames[i],"_",per[[i]][j,1],"_vs_",per[[i]][j,2],".csv",sep="") )
+  for(j in 1:length(resOrdered[[i]])){
+    resOrdered[[i]][[j]][which( rownames(resOrdered[[i]][[j]])%in%noconvl ),6] = "No_convergence"
+    write.csv(resOrdered[[i]][[j]],file=paste("Genes_DE_",Vnames[i],"_",per[[i]][j,1],"_vs_",per[[i]][j,2],".csv",sep="") )
+  }
 }
 print("done saving DEG")
 
@@ -194,4 +200,7 @@ write.table(rbind(names(opt),unlist(opt)),"options.txt",col.names=F,row.names=F,
 save(dds,res,resOrdered, file = "RNAseq_supervised.RData")
 
 print("done saving results")
+
+writeLines(capture.output(sessionInfo()), "sessionInfo.txt")
+
 
