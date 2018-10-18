@@ -121,7 +121,7 @@ if(opt$cores>1){
   register(MulticoreParam(opt$cores))
   para = TRUE
 }
-dds = DESeq(ddsHTSeq,parallel = para, maxit=as.numeric(opt$maxit) ) 
+dds = DESeq(ddsHTSeq,parallel = para) #, maxit=as.numeric(opt$maxit) ) 
 
 Vnames = colnames(groups)
 res = vector("list",length(Vnames))
