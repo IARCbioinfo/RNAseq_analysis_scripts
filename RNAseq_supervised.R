@@ -45,7 +45,7 @@ DESeqDataSetFromHTSeqCount2 <- function( sampleTable, directory=".", design, ign
   tbl <- sapply( l, function(a) a[,ncol(a)] ) # changed
   tbl2 <- l[[1]][,1:(ncol(l[[1]])-1)] # changed
   colnames(tbl) <- sampleTable[,1]
-  rownames(tbl) <- l[[1]][,ncol(l[[1]])-1] # changed
+  rownames(tbl) <- l[[1]][,1] # changed
   rownames(sampleTable) <- sampleTable[,1]
   tbl <- tbl[ !specialRows, , drop=FALSE ]
   tbl2<- tbl2[ !specialRows, , drop=FALSE ]
